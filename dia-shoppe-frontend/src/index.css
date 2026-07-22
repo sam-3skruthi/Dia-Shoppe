@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: 'Manrope', system-ui, 'Segoe UI', Roboto, sans-serif;
+    color: #1f2937;
+    background: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Respect users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+  #root {
+    width: 100%;
+    min-height: 100vh;
+  }
+}
+
+/*
+  ── SALE THEME HOOK ─────────────────────────────────────────────
+  The storefront switches to its "sale" look whenever a sale event is live OR
+  an admin forces it (Admin → Sales → "Sale design" toggle). CatalogContext
+  sets  <html data-sale-theme="on">  in that state.
+
+  Build the second (sale) frontend by adding styles under this selector — they
+  apply automatically when the sale is on and revert when it's off. Example
+  starting point (a warm sale accent); replace with your own sale design:
+*/
+:root[data-sale-theme='on'] {
+  --sale-accent: #e11d48; /* rose-600 — sale red */
+}
+:root[data-sale-theme='on'] body {
+  /* subtle warm tint so the whole store reads as "on sale"; expand freely */
+  background:
+    radial-gradient(60rem 60rem at 100% -10%, rgba(225, 29, 72, 0.05), transparent 60%),
+    #ffffff;
+}

@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dia-shoppe",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "dia-shoppe-frontend"],
+      "port": 5173,
+      "autoPort": true
+    }
+  ]
+}
