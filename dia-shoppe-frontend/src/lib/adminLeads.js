@@ -15,15 +15,28 @@ import { supabase } from './supabase'
 const ABANDON_AFTER_MS = 60 * 60 * 1000 // 1 hour
 
 export async function fetchLeads() {
+  // cart_items.user_id references auth.users (not user_profiles directly), so
+  // PostgREST can't embed the profile in one query — fetch both and join here.
   const { data, error } = await supabase
     .from('cart_items')
-    .select('user_id, quantity, added_at, products(name, price), user_profiles!inner(first_name, last_name, email, phone, whatsapp_marketing_opt_in, source)')
+    .select('user_id, quantity, added_at, products(name, price)')
     .order('added_at', { ascending: false })
   if (error) return { error: error.message, leads: [] }
 
+  const userIds = [...new Set((data || []).map((r) => r.user_id))]
+  let profiles = {}
+  if (userIds.length) {
+    const { data: profs, error: pErr } = await supabase
+      .from('user_profiles')
+      .select('id, first_name, last_name, email, phone, whatsapp_marketing_opt_in, source')
+      .in('id', userIds)
+    if (pErr) return { error: pErr.message, leads: [] }
+    profiles = Object.fromEntries((profs || []).map((p) => [p.id, p]))
+  }
+
   const byUser = new Map()
   for (const row of data || []) {
-    const p = row.user_profiles
+    const p = profiles[row.user_id]
     const cur = byUser.get(row.user_id) || {
       userId: row.user_id,
       name: [p?.first_name, p?.last_name].filter(Boolean).join(' ') || 'Customer',
