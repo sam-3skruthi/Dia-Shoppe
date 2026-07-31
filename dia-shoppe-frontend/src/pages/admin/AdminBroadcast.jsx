@@ -13,11 +13,13 @@ import {
   a personalised message editor, a live phone-style preview, and past sends.
 */
 
+// Messages are auto-greeted by the customer's name via the approved WhatsApp
+// "promo" template, so the wording below is just the offer (no name greeting).
 const TEMPLATES = [
   { id: 'blank', label: 'Blank', text: '' },
-  { id: 'sale', label: 'Sale announcement', text: "Hi {{name}}! 🎉 Our Dia Shoppe sale is live — up to 25% off BP monitors, glucometers & more. Shop now before stock runs out!" },
-  { id: 'restock', label: 'Back in stock', text: "Hi {{name}}, good news — items you may need are back in stock at Dia Shoppe. Order today for fast PAN-India delivery." },
-  { id: 'festive', label: 'Festive offer', text: "Hi {{name}}, wishing you good health this season! Enjoy special festive prices on trusted medical equipment at Dia Shoppe." },
+  { id: 'sale', label: 'Sale announcement', text: "🎉 Our Dia Shoppe sale is live — up to 25% off BP monitors, glucometers & more. Shop now before stock runs out!" },
+  { id: 'restock', label: 'Back in stock', text: "Good news — items you may need are back in stock at Dia Shoppe. Order today for fast PAN-India delivery." },
+  { id: 'festive', label: 'Festive offer', text: "Wishing you good health this season! Enjoy special festive prices on trusted medical equipment at Dia Shoppe." },
 ]
 
 export default function AdminBroadcast() {
@@ -103,7 +105,7 @@ export default function AdminBroadcast() {
               className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-secondary-400 resize-none"
             />
             <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
-              <span><code className="bg-gray-100 px-1 py-0.5 rounded">{'{{name}}'}</code> → customer&rsquo;s first name</span>
+              <span>Each customer is automatically greeted by name — just write the offer.</span>
               <span>{charCount} characters</span>
             </div>
 
