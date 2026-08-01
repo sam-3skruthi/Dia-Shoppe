@@ -109,7 +109,7 @@ export default function AdminBroadcast() {
               <span>{charCount} characters</span>
             </div>
 
-            {/* optional image/poster */}
+            {/* poster image — required (the WhatsApp marketing template has an image header) */}
             <div className="mt-4">
               {imagePreview ? (
                 <div className="relative inline-block">
@@ -120,7 +120,7 @@ export default function AdminBroadcast() {
                 </div>
               ) : (
                 <label className="inline-flex items-center gap-2 text-sm font-semibold text-primary-700 cursor-pointer hover:underline">
-                  <FiImage size={16} /> Add an image / poster (optional)
+                  <FiImage size={16} /> Add a poster image <span className="text-gray-400 font-normal">(required)</span>
                   <input type="file" accept="image/*" onChange={pickImage} className="hidden" />
                 </label>
               )}
@@ -128,7 +128,7 @@ export default function AdminBroadcast() {
 
             <button
               onClick={() => setConfirming(true)}
-              disabled={!message.trim() || sending || !audience}
+              disabled={!message.trim() || !imageFile || sending || !audience}
               className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-primary-700 text-white font-semibold px-6 py-3 rounded-full hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FiSend size={17} /> {sending ? 'Sending…' : `Send to ${audience ?? 0} customers`}
