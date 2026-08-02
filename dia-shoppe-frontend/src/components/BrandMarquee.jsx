@@ -42,7 +42,7 @@ export default function BrandMarquee() {
   const loop = [...brands, ...brands]
   return (
     <div className="bg-white border-b border-gray-100 overflow-hidden py-3 relative z-50">
-      <div className="flex w-max items-center animate-marquee hover:[animation-play-state:paused]">
+      <div className="flex w-max items-center animate-marquee-reverse hover:[animation-play-state:paused]">
         {loop.map((brand, i) => (
           <LogoTile key={i} brand={brand} />
         ))}

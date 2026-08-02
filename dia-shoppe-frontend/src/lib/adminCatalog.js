@@ -26,13 +26,36 @@ export async function fetchAdminProducts() {
   return { products: data || [], error: error?.message || null }
 }
 
+/*
+  `specs` (migration 024) may not exist yet on databases that haven't been
+  migrated. Postgrest reports that as a schema-cache error naming the column;
+  in that case we retry once without it so product saves never hard-fail —
+  everything except the spec rows still saves, and specs start persisting by
+  themselves once the migration is applied.
+*/
+const isMissingColumn = (msg, col) =>
+  !!msg && msg.includes(col) && /schema cache|does not exist|column/i.test(msg)
+
+const withoutKey = (fields, key) => {
+  const { [key]: _omit, ...rest } = fields
+  return rest
+}
+
 export async function createProduct(fields) {
   const { data, error } = await supabase.from('products').insert(fields).select().single()
+  if (error && isMissingColumn(error.message, 'specs')) {
+    const retry = await supabase.from('products').insert(withoutKey(fields, 'specs')).select().single()
+    return { product: retry.data, error: retry.error?.message || null }
+  }
   return { product: data, error: error?.message || null }
 }
 
 export async function updateProduct(id, fields) {
   const { error } = await supabase.from('products').update(fields).eq('id', id)
+  if (error && isMissingColumn(error.message, 'specs')) {
+    const retry = await supabase.from('products').update(withoutKey(fields, 'specs')).eq('id', id)
+    return { error: retry.error?.message || null }
+  }
   return { error: error?.message || null }
 }
 

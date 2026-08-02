@@ -52,6 +52,11 @@ export default {
           '0%':   { transform: 'translateX(0)' },
           '100%': { transform: 'translateX(-50%)' },
         },
+        /* same loop, travelling left → right */
+        'marquee-reverse': {
+          '0%':   { transform: 'translateX(-50%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
         blob: {
           '0%, 100%': { transform: 'translate(0px, 0px) scale(1)' },
           '33%':      { transform: 'translate(24px, -28px) scale(1.08)' },
@@ -76,6 +81,7 @@ export default {
       },
       animation: {
         marquee: 'marquee 28s linear infinite',
+        'marquee-reverse': 'marquee-reverse 28s linear infinite',
         'blob-slow':   'blob 14s ease-in-out infinite',
         'blob-slower': 'blob 20s ease-in-out infinite',
         'float-slow':  'float 6s ease-in-out infinite',
