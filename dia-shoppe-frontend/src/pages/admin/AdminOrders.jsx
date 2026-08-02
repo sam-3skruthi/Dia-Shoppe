@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { fetchMyOrders, updateOrderStatus, onOrdersChange, ORDER_STATUSES } from '../../lib/orders'
 import { exportCsv } from '../../lib/exportCsv'
-import { FiChevronDown, FiPackage, FiTruck, FiX, FiDownload } from 'react-icons/fi'
+import BarcodeScanner from '../../components/admin/BarcodeScanner'
+import { FiChevronDown, FiPackage, FiTruck, FiX, FiDownload, FiCamera } from 'react-icons/fi'
 
 const inr = (n) => '₹' + Number(n).toLocaleString('en-IN')
 const fmtDate = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -38,6 +39,7 @@ export default function AdminOrders() {
 
   // when marking shipped, collect courier + tracking number first
   const [shipModal, setShipModal] = useState(null) // { orderId, courier, trackingNumber }
+  const [scanning, setScanning] = useState(false)  // camera barcode scanner open
 
   const changeStatus = async (id, status) => {
     if (status === 'shipped') {
@@ -205,18 +207,38 @@ export default function AdminOrders() {
             </label>
             <label className="block mb-5">
               <span className="text-sm font-medium text-gray-600">Tracking Number</span>
-              <input
-                value={shipModal.trackingNumber}
-                onChange={(e) => setShipModal((m) => ({ ...m, trackingNumber: e.target.value }))}
-                placeholder="e.g. DL123456789IN"
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-secondary-400"
-              />
+              <div className="mt-1 flex gap-2">
+                <input
+                  value={shipModal.trackingNumber}
+                  onChange={(e) => setShipModal((m) => ({ ...m, trackingNumber: e.target.value }))}
+                  placeholder="e.g. DL123456789IN"
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-secondary-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => setScanning(true)}
+                  title="Scan the barcode on the courier label"
+                  className="shrink-0 inline-flex items-center gap-1.5 border border-gray-300 rounded-lg px-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                >
+                  <FiCamera size={16} /> Scan
+                </button>
+              </div>
             </label>
             <button type="submit" className="w-full bg-primary-700 text-white font-semibold py-2.5 rounded-full hover:bg-primary-800 transition-colors">
               Mark as Shipped
             </button>
           </form>
         </div>
+      )}
+
+      {scanning && (
+        <BarcodeScanner
+          onClose={() => setScanning(false)}
+          onDetected={(code) => {
+            setShipModal((m) => ({ ...m, trackingNumber: code }))
+            setScanning(false)
+          }}
+        />
       )}
     </AdminLayout>
   )

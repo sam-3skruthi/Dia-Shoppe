@@ -36,6 +36,8 @@ const mapOrder = (row) => {
     payment: PAYMENT_LABELS[row.payment_method] || row.payment_method,
     courier: row.courier,
     trackingNumber: row.tracking_number,
+    cancellationReason: row.cancellation_reason,
+    cancelledBy: row.cancelled_by,
     items,
     customer: {
       name: row.shipping_name,
@@ -142,7 +144,42 @@ export async function updateOrderStatus(id, status, shipping = {}) {
   const patch = { status }
   if (shipping.courier !== undefined) patch.courier = shipping.courier || null
   if (shipping.trackingNumber !== undefined) patch.tracking_number = shipping.trackingNumber || null
+  if (status === 'cancelled') {
+    patch.cancelled_at = new Date().toISOString()
+    patch.cancelled_by = 'admin'
+    if (shipping.reason) patch.cancellation_reason = shipping.reason
+  }
   const { error } = await supabase.from('orders').update(patch).eq('id', id)
+  return { error: error?.message || null }
+}
+
+/* ── Customer cancellation ─────────────────────────
+   Allowed only before the parcel ships; RLS enforces the same rule so this
+   can't be bypassed from the client. The DB trigger puts the stock back. */
+
+export const CANCELLABLE_STATUSES = ['pending', 'paid', 'confirmed']
+
+export const CANCEL_REASONS = [
+  'Ordered by mistake',
+  'Found it cheaper elsewhere',
+  'Delivery is taking too long',
+  'Ordered the wrong item',
+  'No longer need it',
+  'Other',
+]
+
+export const canCancel = (statusRaw) => CANCELLABLE_STATUSES.includes(statusRaw)
+
+export async function cancelMyOrder(id, reason) {
+  const { error } = await supabase
+    .from('orders')
+    .update({
+      status: 'cancelled',
+      cancellation_reason: reason || null,
+      cancelled_at: new Date().toISOString(),
+      cancelled_by: 'customer',
+    })
+    .eq('id', id)
   return { error: error?.message || null }
 }
 

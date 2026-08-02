@@ -82,9 +82,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ received: true, alreadyProcessed: true }), { status: 200 });
     }
 
+    // Payment succeeded → confirm straight away (no manual confirm step).
+    // The whatsapp-notify trigger fires on 'confirmed' and tells the customer.
     await supabase
       .from("orders")
-      .update({ status: "paid", payment_id: paymentId })
+      .update({ status: "confirmed", payment_id: paymentId })
       .eq("id", order.id);
 
     // Decrement stock (same rule as verify-payment)

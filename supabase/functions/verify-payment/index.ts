@@ -156,9 +156,11 @@ serve(async (req) => {
       });
     }
 
+    // Payment verified → confirm straight away (no manual confirm step), so the
+    // customer gets the WhatsApp confirmation the moment they finish paying.
     const { error: updateError } = await supabase
       .from("orders")
-      .update({ status: "paid", payment_id: razorpay_payment_id })
+      .update({ status: "confirmed", payment_id: razorpay_payment_id })
       .eq("id", order.id);
     if (updateError) throw updateError;
 

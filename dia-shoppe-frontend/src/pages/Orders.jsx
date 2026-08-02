@@ -4,19 +4,87 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import PageBackdrop from '../components/PageBackdrop'
 import { Reveal, Stagger, StaggerItem } from '../components/motion'
-import { fetchMyOrders } from '../lib/orders'
+import { fetchMyOrders, cancelMyOrder, canCancel, CANCEL_REASONS } from '../lib/orders'
 import { useAuth } from '../context/AuthContext'
 import {
-  FiPackage, FiChevronRight, FiShoppingBag, FiCheckCircle, FiCalendar,
+  FiPackage, FiChevronRight, FiShoppingBag, FiCheckCircle, FiCalendar, FiXCircle,
 } from 'react-icons/fi'
 
 const fmtDate = (iso) =>
   new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 
-function OrderCard({ order }) {
+/* Cancel dialog — reason is required so the admin list shows WHY */
+function CancelDialog({ order, onClose, onCancelled }) {
+  const [reason, setReason] = useState('')
+  const [note, setNote] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  const submit = async (e) => {
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
+    const full = reason === 'Other' && note.trim() ? note.trim() : reason
+    const { error: err } = await cancelMyOrder(order.id, full)
+    setBusy(false)
+    if (err) { setError(err); return }
+    onCancelled(order.id, full)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <form onSubmit={submit} className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h2 className="font-display text-xl font-semibold text-ink-900">Cancel this order?</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Order {order.id} · ₹{order.totals.total.toLocaleString('en-IN')}
+        </p>
+
+        <fieldset className="mt-4 space-y-2">
+          <legend className="text-sm font-medium text-gray-600 mb-2">Please tell us why</legend>
+          {CANCEL_REASONS.map((r) => (
+            <label key={r} className={`flex items-center gap-2.5 border rounded-xl px-3 py-2 cursor-pointer text-sm transition-colors ${
+              reason === r ? 'border-secondary-500 bg-secondary-50' : 'border-gray-200 hover:border-gray-300'
+            }`}>
+              <input type="radio" name="reason" value={r} required checked={reason === r}
+                onChange={() => setReason(r)} className="w-4 h-4 accent-primary-800" />
+              {r}
+            </label>
+          ))}
+        </fieldset>
+
+        {reason === 'Other' && (
+          <textarea
+            value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Tell us a little more…"
+            className="mt-3 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400"
+          />
+        )}
+
+        {error && <p className="text-sm text-red-600 mt-3" role="alert">{error}</p>}
+
+        <p className="text-xs text-gray-400 mt-4">
+          Items go back into stock immediately. If you already paid, the refund is processed to your original payment method.
+        </p>
+
+        <div className="flex justify-end gap-3 mt-5">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-100">
+            Keep order
+          </button>
+          <button type="submit" disabled={busy} className="px-5 py-2 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-60">
+            {busy ? 'Cancelling…' : 'Cancel order'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+function OrderCard({ order, onCancelled }) {
   const itemCount = order.items.reduce((n, i) => n + i.qty, 0)
   const preview = order.items.slice(0, 2).map((i) => i.name).join(', ')
   const more = order.items.length - 2
+  const [dialog, setDialog] = useState(false)
+  const cancellable = canCancel(order.statusRaw)
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
@@ -33,8 +101,10 @@ function OrderCard({ order }) {
             </div>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-secondary-700 bg-secondary-50 px-3 py-1 rounded-full">
-          <FiCheckCircle size={13} /> {order.status}
+        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${
+          order.statusRaw === 'cancelled' ? 'text-red-600 bg-red-50' : 'text-secondary-700 bg-secondary-50'
+        }`}>
+          {order.statusRaw === 'cancelled' ? <FiXCircle size={13} /> : <FiCheckCircle size={13} />} {order.status}
         </span>
       </div>
 
@@ -59,6 +129,27 @@ function OrderCard({ order }) {
           </Link>
         </div>
       </div>
+
+      {/* cancel — only before the parcel ships */}
+      {cancellable && (
+        <div className="pt-3 mt-3 border-t border-gray-50 flex justify-end">
+          <button
+            onClick={() => setDialog(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-red-600 transition-colors"
+          >
+            <FiXCircle size={14} /> Cancel order
+          </button>
+        </div>
+      )}
+      {order.statusRaw === 'cancelled' && order.cancellationReason && (
+        <p className="pt-3 mt-3 border-t border-gray-50 text-xs text-gray-400">
+          Cancelled — {order.cancellationReason}
+        </p>
+      )}
+
+      {dialog && (
+        <CancelDialog order={order} onClose={() => setDialog(false)} onCancelled={(id, reason) => { setDialog(false); onCancelled(id, reason) }} />
+      )}
     </div>
   )
 }
@@ -140,7 +231,20 @@ export default function Orders() {
       <section className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 sm:pb-28">
         <Stagger className="space-y-4">
           {orders.map((o) => (
-            <StaggerItem key={o.id}><OrderCard order={o} /></StaggerItem>
+            <StaggerItem key={o.id}>
+              <OrderCard
+                order={o}
+                onCancelled={(id, reason) =>
+                  setOrders((list) =>
+                    list.map((x) =>
+                      x.id === id
+                        ? { ...x, status: 'Cancelled', statusRaw: 'cancelled', cancellationReason: reason }
+                        : x
+                    )
+                  )
+                }
+              />
+            </StaggerItem>
           ))}
         </Stagger>
 
