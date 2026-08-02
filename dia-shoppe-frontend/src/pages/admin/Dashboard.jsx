@@ -123,6 +123,21 @@ export default function AdminDashboard() {
         <Kpi icon={FiPackage} label="Live products" value={stats.liveProducts} tint="bg-amber-50 text-amber-600" />
       </div>
 
+      {/* failed refunds — customer is out of pocket until someone acts */}
+      {stats.failedRefunds > 0 && (
+        <Link to="/admin/orders" className="mt-4 flex gap-3 bg-red-50 border border-red-200 rounded-2xl p-4 hover:border-red-300 transition-colors" role="alert">
+          <FiAlertTriangle className="text-red-600 shrink-0 mt-0.5" size={18} />
+          <div className="text-sm">
+            <p className="font-semibold text-red-700">
+              {stats.failedRefunds} automatic refund{stats.failedRefunds === 1 ? '' : 's'} failed
+            </p>
+            <p className="text-red-600/90 mt-0.5">
+              Those customers paid and cancelled but have not got their money back. Open Orders to see which, then refund in Razorpay.
+            </p>
+          </div>
+        </Link>
+      )}
+
       {/* needs attention */}
       <Card title="Needs attention" className="mt-4"
         action={<Link to="/admin/orders" className="text-xs text-primary-700 font-semibold hover:underline inline-flex items-center gap-1">Manage orders <FiArrowRight size={12} /></Link>}>

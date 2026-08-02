@@ -3,7 +3,16 @@ import AdminLayout from '../../components/admin/AdminLayout'
 import { fetchMyOrders, updateOrderStatus, onOrdersChange, ORDER_STATUSES } from '../../lib/orders'
 import { exportCsv } from '../../lib/exportCsv'
 import BarcodeScanner from '../../components/admin/BarcodeScanner'
-import { FiChevronDown, FiPackage, FiTruck, FiX, FiDownload, FiCamera } from 'react-icons/fi'
+import { FiChevronDown, FiPackage, FiTruck, FiX, FiDownload, FiCamera, FiAlertTriangle, FiRotateCcw } from 'react-icons/fi'
+
+/* Refund state shown on cancelled orders. A FAILED refund means money is still
+   owed to the customer, so it is styled as an alert rather than a quiet chip. */
+const REFUND_BADGE = {
+  processed: ['Refunded', 'bg-emerald-50 text-emerald-600'],
+  pending: ['Refund pending', 'bg-amber-50 text-amber-600'],
+  failed: ['Refund FAILED', 'bg-red-100 text-red-700'],
+  not_applicable: ['COD — no refund', 'bg-gray-100 text-gray-500'],
+}
 
 const inr = (n) => '₹' + Number(n).toLocaleString('en-IN')
 const fmtDate = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -64,6 +73,7 @@ export default function AdminOrders() {
   }
 
   const shown = filter === 'all' ? orders : orders.filter((o) => o.statusRaw === filter)
+  const failedRefunds = orders.filter((o) => o.refundStatus === 'failed')
 
   const handleExport = () => {
     const today = new Date().toISOString().slice(0, 10)
@@ -113,6 +123,23 @@ export default function AdminOrders() {
         <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5" role="alert">
           {error}
         </p>
+      )}
+
+      {/* Failed refunds = money still owed to a customer. Never let this hide
+          at the bottom of the table. */}
+      {failedRefunds.length > 0 && (
+        <div className="mb-4 flex gap-3 bg-red-50 border border-red-200 rounded-xl p-4" role="alert">
+          <FiAlertTriangle className="text-red-600 shrink-0 mt-0.5" size={18} />
+          <div className="text-sm">
+            <p className="font-semibold text-red-700">
+              {failedRefunds.length} refund{failedRefunds.length === 1 ? '' : 's'} could not be processed automatically
+            </p>
+            <p className="text-red-600/90 mt-0.5">
+              The customer has been charged and is still waiting for their money. Refund these manually in the
+              Razorpay dashboard: {failedRefunds.map((o) => `#${o.id}`).join(', ')}
+            </p>
+          </div>
+        </div>
       )}
 
       {loading ? (
@@ -173,6 +200,21 @@ export default function AdminOrders() {
                       {(o.courier || o.trackingNumber) && (
                         <div className="flex items-center gap-1 text-[11px] text-gray-400 mt-1">
                           <FiTruck size={11} /> {o.courier}{o.trackingNumber ? ` · ${o.trackingNumber}` : ''}
+                        </div>
+                      )}
+                      {o.statusRaw === 'cancelled' && o.refundStatus && (
+                        <div className="mt-1">
+                          <span
+                            title={o.refundError || o.refundId || ''}
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${REFUND_BADGE[o.refundStatus]?.[1] || 'bg-gray-100 text-gray-500'}`}
+                          >
+                            <FiRotateCcw size={9} /> {REFUND_BADGE[o.refundStatus]?.[0] || o.refundStatus}
+                          </span>
+                        </div>
+                      )}
+                      {o.cancellationReason && (
+                        <div className="text-[10px] text-gray-400 mt-1 max-w-[160px] truncate" title={o.cancellationReason}>
+                          {o.cancellationReason}
                         </div>
                       )}
                     </td>

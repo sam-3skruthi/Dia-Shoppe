@@ -54,6 +54,8 @@ export async function fetchDashboardStats() {
   // ── Needs attention ──
   const byStatus = {}
   for (const o of orders) byStatus[o.status] = (byStatus[o.status] || 0) + 1
+  // refunds the automation couldn't complete — money still owed to a customer
+  const failedRefunds = orders.filter((o) => o.refund_status === 'failed').length
 
   // ── Revenue by month, last 6 months, split COD vs online ──
   const revenueByMonth = []
@@ -109,6 +111,7 @@ export async function fetchDashboardStats() {
       customers: customersRes.count ?? 0,
       liveProducts: products.filter((p) => p.is_active).length,
       byStatus,
+      failedRefunds,
       revenueByMonth,
       topProducts,
       lowStock,

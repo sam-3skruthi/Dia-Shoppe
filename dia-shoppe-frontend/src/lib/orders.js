@@ -38,6 +38,10 @@ const mapOrder = (row) => {
     trackingNumber: row.tracking_number,
     cancellationReason: row.cancellation_reason,
     cancelledBy: row.cancelled_by,
+    refundStatus: row.refund_status,
+    refundId: row.refund_id,
+    refundAmount: row.refund_amount != null ? Number(row.refund_amount) : null,
+    refundError: row.refund_error,
     items,
     customer: {
       name: row.shipping_name,
