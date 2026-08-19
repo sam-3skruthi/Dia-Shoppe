@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { fetchWhatsAppLog } from '../../lib/adminWhatsApp'
+import MessageSettings from '../../components/admin/MessageSettings'
 import {
   FiMessageCircle, FiSend, FiAlertTriangle, FiList, FiInfo, FiCheckCircle, FiTruck, FiHome, FiXCircle,
+  FiActivity, FiEdit3,
 } from 'react-icons/fi'
 
 /*
@@ -43,6 +45,7 @@ export default function AdminWhatsApp() {
   const [stats, setStats] = useState({ total: 0, sent: 0, failed: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [tab, setTab] = useState('log') // 'log' | 'settings'
 
   /* Real health, worked out from the log rather than assumed:
      · nothing sent yet          → unknown
@@ -96,6 +99,25 @@ export default function AdminWhatsApp() {
 
   return (
     <AdminLayout title="WhatsApp Automation" subtitle="Automatic order updates to customers' WhatsApp">
+      {/* tabs — the log, and the wording that drives it */}
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-4 w-fit">
+        {[
+          { key: 'log', label: 'Message log', icon: FiActivity },
+          { key: 'settings', label: 'Message settings', icon: FiEdit3 },
+        ].map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              tab === t.key ? 'bg-white text-ink-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <t.icon size={15} /> {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'settings' ? <MessageSettings /> : <>
       {/* status — derived from the log, not hardcoded, so it tells the truth */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-3 mb-4">
         <span className={`w-11 h-11 rounded-xl flex items-center justify-center ${health.tint}`}>
@@ -214,6 +236,7 @@ export default function AdminWhatsApp() {
           still under Meta review and the sandbox template was used instead.
         </p>
       </div>
+      </>}
     </AdminLayout>
   )
 }
