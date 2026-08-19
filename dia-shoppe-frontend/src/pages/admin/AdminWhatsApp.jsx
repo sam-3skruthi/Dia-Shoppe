@@ -44,6 +44,42 @@ export default function AdminWhatsApp() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  /* Real health, worked out from the log rather than assumed:
+     · nothing sent yet          → unknown
+     · every recent send failed  → broken
+     · sends are falling back    → working, but customers see "Hello World"
+     · genuinely sent            → healthy */
+  const recent = messages.slice(0, 10)
+  const health = (() => {
+    if (loading) return { title: 'Checking…', detail: 'Reading the message log', badge: '…', tint: 'bg-gray-100 text-gray-400', badgeTint: 'bg-gray-100 text-gray-500' }
+    if (stats.total === 0)
+      return {
+        title: 'No messages sent yet',
+        detail: "Triggers are wired — the first order status change will show up here",
+        badge: 'Idle', tint: 'bg-gray-100 text-gray-400', badgeTint: 'bg-gray-100 text-gray-500',
+      }
+    const fallbacks = recent.filter((m) => m.outcome === 'fallback').length
+    const fails = recent.filter((m) => m.outcome === 'failed').length
+    if (fails === recent.length)
+      return {
+        title: 'Automation is failing', detail: 'Every recent message was rejected by Meta',
+        badge: 'Broken', tint: 'bg-red-50 text-red-600', badgeTint: 'bg-red-100 text-red-700',
+        warning: 'Customers are not receiving anything',
+        warningDetail: 'Open a failed row below to see Meta\'s exact reason — usually an unapproved template or a number missing from the test allow-list.',
+      }
+    if (fallbacks > 0)
+      return {
+        title: 'Sending, but with the test template', detail: 'Your order_update template is not approved yet',
+        badge: 'Degraded', tint: 'bg-amber-50 text-amber-600', badgeTint: 'bg-amber-100 text-amber-700',
+        warning: 'Customers receive Meta\'s "Hello World" text, not your order update',
+        warningDetail: 'Get the order_update template approved in Meta Business Manager (category: Utility, language: en, 4 variables). No code change needed once it clears.',
+      }
+    return {
+      title: 'Automation is active', detail: "Messages send automatically whenever an order's status changes",
+      badge: 'Active', tint: 'bg-secondary-50 text-secondary-600', badgeTint: 'bg-emerald-50 text-emerald-600',
+    }
+  })()
+
   useEffect(() => {
     let cancelled = false
     fetchWhatsAppLog().then((res) => {
@@ -60,15 +96,27 @@ export default function AdminWhatsApp() {
 
   return (
     <AdminLayout title="WhatsApp Automation" subtitle="Automatic order updates to customers' WhatsApp">
-      {/* status */}
+      {/* status — derived from the log, not hardcoded, so it tells the truth */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-3 mb-4">
-        <span className="w-11 h-11 rounded-xl bg-secondary-50 flex items-center justify-center"><FiMessageCircle className="text-secondary-600" size={22} /></span>
+        <span className={`w-11 h-11 rounded-xl flex items-center justify-center ${health.tint}`}>
+          <FiMessageCircle size={22} />
+        </span>
         <div>
-          <div className="font-semibold text-ink-900">Automation is active</div>
-          <div className="text-xs text-gray-400">Messages send automatically whenever an order's status changes — no worker action needed</div>
+          <div className="font-semibold text-ink-900">{health.title}</div>
+          <div className="text-xs text-gray-400">{health.detail}</div>
         </div>
-        <span className="ml-auto text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-600">Active</span>
+        <span className={`ml-auto text-xs font-semibold px-3 py-1 rounded-full ${health.badgeTint}`}>{health.badge}</span>
       </div>
+
+      {health.warning && (
+        <div className="flex gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4" role="alert">
+          <FiAlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={18} />
+          <div className="text-sm">
+            <p className="font-semibold text-amber-800">{health.warning}</p>
+            <p className="text-amber-700/90 mt-0.5">{health.warningDetail}</p>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 text-red-600 rounded-xl p-4 text-sm mb-4" role="alert">Couldn't load messages: {error}</div>

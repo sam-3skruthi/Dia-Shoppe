@@ -5,6 +5,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Browser-invoked function: the admin UI calls this with supabase.functions
+// .invoke(), which sends Authorization + Content-Type and therefore triggers a
+// CORS preflight. Without these headers the browser blocks the call and
+// supabase-js reports "Failed to send a request to the Edge Function".
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -40,6 +51,7 @@ async function sendTemplate(to: string, template: string, params: string[]) {
 }
 
 serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
@@ -49,13 +61,13 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user } } = await asUser.auth.getUser();
-    if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { data: me } = await admin.from("user_profiles").select("role").eq("id", user.id).single();
-    if (me?.role !== "admin") return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+    if (me?.role !== "admin") return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // 2 — target customer + consent check
     const { user_id } = await req.json();
-    if (!user_id) return new Response(JSON.stringify({ error: "user_id required" }), { status: 400 });
+    if (!user_id) return new Response(JSON.stringify({ error: "user_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { data: profile } = await admin
       .from("user_profiles")
@@ -63,10 +75,10 @@ serve(async (req) => {
       .eq("id", user_id)
       .single();
     if (!profile?.whatsapp_marketing_opt_in) {
-      return new Response(JSON.stringify({ skipped: true, reason: "no consent" }), { status: 200 });
+      return new Response(JSON.stringify({ skipped: true, reason: "no consent" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const to = normalizePhone(profile.phone || "");
-    if (!to) return new Response(JSON.stringify({ skipped: true, reason: "no phone" }), { status: 200 });
+    if (!to) return new Response(JSON.stringify({ skipped: true, reason: "no phone" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // 3 — cart snapshot
     const { data: cart } = await admin
@@ -74,7 +86,7 @@ serve(async (req) => {
       .select("quantity, products(name)")
       .eq("user_id", user_id);
     const itemCount = (cart || []).reduce((s: number, r: any) => s + r.quantity, 0);
-    if (itemCount === 0) return new Response(JSON.stringify({ skipped: true, reason: "empty cart" }), { status: 200 });
+    if (itemCount === 0) return new Response(JSON.stringify({ skipped: true, reason: "empty cart" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // owner-editable reminder wording (Admin → Settings), with a safe default
     const { data: msgSettings } = await admin.from("site_settings").select("value").eq("key", "message_settings").maybeSingle();
@@ -105,10 +117,10 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ sent: result.ok, template: templateUsed }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("whatsapp-remind error:", error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

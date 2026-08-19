@@ -7,6 +7,7 @@ import { onOrdersChange } from '../../lib/orders'
 import {
   FiUsers, FiShoppingBag, FiTrendingUp, FiPackage, FiStar, FiTruck,
   FiClock, FiCheckCircle, FiAlertTriangle, FiPlus, FiArrowRight,
+  FiInstagram, FiFacebook, FiMessageCircle,
 } from 'react-icons/fi'
 
 /*
@@ -22,6 +23,14 @@ const REVENUE_SERIES = [
 ]
 
 const inr = (n) => '₹' + n.toLocaleString('en-IN')
+
+// Channel shortcuts next to "Add Product" — Instagram/Facebook both live on the
+// Social inbox page; WhatsApp has its own page.
+const CHANNEL_LINKS = [
+  { label: 'Instagram', to: '/admin/social', icon: FiInstagram, tint: 'bg-pink-50 text-pink-600 hover:bg-pink-100' },
+  { label: 'Facebook', to: '/admin/social', icon: FiFacebook, tint: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
+  { label: 'WhatsApp', to: '/admin/whatsapp', icon: FiMessageCircle, tint: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
+]
 
 const STATUS_STYLE = {
   pending: 'bg-amber-50 text-amber-600',
@@ -85,9 +94,24 @@ export default function AdminDashboard() {
   }, [])
 
   const actions = (
-    <Link to="/admin/products" className="inline-flex items-center gap-1.5 bg-primary-700 text-white rounded-lg px-3 py-2 text-sm font-semibold hover:bg-primary-800">
-      <FiPlus size={15} /> Add Product
-    </Link>
+    <div className="flex items-center gap-2">
+      {/* quick jumps to the channel pages */}
+      {CHANNEL_LINKS.map((c) => (
+        <Link
+          key={c.label}
+          to={c.to}
+          title={c.label}
+          aria-label={c.label}
+          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${c.tint}`}
+        >
+          <c.icon size={17} />
+        </Link>
+      ))}
+      <span className="w-px h-6 bg-gray-200 mx-1" aria-hidden="true" />
+      <Link to="/admin/products" className="inline-flex items-center gap-1.5 bg-primary-700 text-white rounded-lg px-3 py-2 text-sm font-semibold hover:bg-primary-800">
+        <FiPlus size={15} /> Add Product
+      </Link>
+    </div>
   )
 
   if (error) {
