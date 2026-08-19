@@ -52,7 +52,8 @@ BEGIN
 END;
 $$;
 
+-- NOTE: the trigger itself lives in the migration that first added it
+-- (trg_orders_restock_on_cancel). Creating a second trigger on the same
+-- function here would restock the items TWICE on cancellation, so this
+-- migration only defines/updates the function.
 DROP TRIGGER IF EXISTS trg_restock_cancelled_order ON public.orders;
-CREATE TRIGGER trg_restock_cancelled_order
-  AFTER UPDATE OF status ON public.orders
-  FOR EACH ROW EXECUTE FUNCTION public.restock_cancelled_order();
