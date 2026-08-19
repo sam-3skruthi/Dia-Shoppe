@@ -30,6 +30,10 @@ const mapProduct = (row) => ({
   stock: row.stock_qty,
   rating: row.rating ?? 4,
   image: row.image_url,
+  // full gallery (migration 028); falls back to the single legacy image
+  images: (Array.isArray(row.images) && row.images.length
+    ? row.images
+    : [row.image_url]).filter(Boolean),
   description: row.description,
   // per-product spec rows [{ k, v }] from the admin specs editor (jsonb column)
   specs: Array.isArray(row.specs) ? row.specs.filter((s) => s && s.k && s.v) : null,

@@ -36,15 +36,20 @@ export async function fetchAdminProducts() {
 const isMissingColumn = (msg, col) =>
   !!msg && msg.includes(col) && /schema cache|does not exist|column/i.test(msg)
 
-const withoutKey = (fields, key) => {
-  const { [key]: _omit, ...rest } = fields
+// columns added by later migrations — dropped from the payload if the DB
+// hasn't been migrated yet, so saving never hard-fails
+const MAYBE_MISSING = ['specs', 'images']
+
+const withoutMissing = (fields) => {
+  const rest = { ...fields }
+  for (const key of MAYBE_MISSING) delete rest[key]
   return rest
 }
 
 export async function createProduct(fields) {
   const { data, error } = await supabase.from('products').insert(fields).select().single()
-  if (error && isMissingColumn(error.message, 'specs')) {
-    const retry = await supabase.from('products').insert(withoutKey(fields, 'specs')).select().single()
+  if (error && MAYBE_MISSING.some((c) => isMissingColumn(error.message, c))) {
+    const retry = await supabase.from('products').insert(withoutMissing(fields)).select().single()
     return { product: retry.data, error: retry.error?.message || null }
   }
   return { product: data, error: error?.message || null }
@@ -52,8 +57,8 @@ export async function createProduct(fields) {
 
 export async function updateProduct(id, fields) {
   const { error } = await supabase.from('products').update(fields).eq('id', id)
-  if (error && isMissingColumn(error.message, 'specs')) {
-    const retry = await supabase.from('products').update(withoutKey(fields, 'specs')).eq('id', id)
+  if (error && MAYBE_MISSING.some((c) => isMissingColumn(error.message, c))) {
+    const retry = await supabase.from('products').update(withoutMissing(fields)).eq('id', id)
     return { error: retry.error?.message || null }
   }
   return { error: error?.message || null }

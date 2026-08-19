@@ -118,6 +118,8 @@ export default function ProductDetail() {
   const inStock = product.stock > 0
   const Icon = category?.icon
   const reviews = product.rating * 27 + (product.id % 7) * 4 // stable mock count
+  // real photos for the gallery (migration 028); empty ⇒ category-icon placeholder
+  const gallery = (product.images?.length ? product.images : [product.image]).filter(Boolean)
 
   // admin-entered specs win; otherwise fall back to the auto-generated table
   const specs = product.specs?.length
@@ -165,10 +167,10 @@ export default function ProductDetail() {
           <Reveal>
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-10">
               <div className="relative bg-secondary-50 rounded-2xl h-72 sm:h-96 flex items-center justify-center overflow-hidden">
-                {product.image ? (
+                {gallery.length > 0 ? (
                   <motion.img
                     key={activeImg}
-                    src={product.image}
+                    src={gallery[activeImg] || gallery[0]}
                     alt={product.name}
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -193,20 +195,23 @@ export default function ProductDetail() {
                   <span className="absolute top-4 right-4 bg-primary-700 text-white text-xs font-semibold px-3 py-1 rounded-full">{discount}% OFF</span>
                 )}
               </div>
-              {/* thumbnails */}
-              <div className="flex gap-3 mt-5">
-                {[0, 1, 2, 3].map((i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImg(i)}
-                    className={`w-16 h-16 rounded-xl flex items-center justify-center transition-all ${
-                      activeImg === i ? 'bg-secondary-500 ring-2 ring-secondary-500 ring-offset-2' : 'bg-secondary-50 hover:bg-secondary-100'
-                    }`}
-                  >
-                    {Icon && <Icon size={24} className={activeImg === i ? 'text-white' : 'text-secondary-500'} />}
-                  </button>
-                ))}
-              </div>
+              {/* thumbnails — one per real photo; hidden when there's only one */}
+              {gallery.length > 1 && (
+                <div className="flex gap-3 mt-5 flex-wrap">
+                  {gallery.map((src, i) => (
+                    <button
+                      key={src + i}
+                      onClick={() => setActiveImg(i)}
+                      aria-label={`View photo ${i + 1}`}
+                      className={`w-16 h-16 rounded-xl overflow-hidden bg-secondary-50 transition-all ${
+                        activeImg === i ? 'ring-2 ring-secondary-500 ring-offset-2' : 'opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={src} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </Reveal>
 

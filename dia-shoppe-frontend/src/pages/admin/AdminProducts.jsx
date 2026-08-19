@@ -31,8 +31,7 @@ export default function AdminProducts() {
   // modal state
   const [editing, setEditing] = useState(null) // 'new' | product id
   const [form, setForm] = useState(blank)
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
+  const [gallery, setGallery] = useState([]) // [{url} | {file, preview}] — [0] is primary
   const [saving, setSaving] = useState(false)
 
   const load = () =>
@@ -62,8 +61,7 @@ export default function AdminProducts() {
 
   const openAdd = () => {
     setForm({ ...blank, category_id: categories[0]?.id || '' })
-    setImageFile(null)
-    setImagePreview(null)
+    setGallery([])
     setEditing('new')
   }
 
@@ -75,33 +73,53 @@ export default function AdminProducts() {
       badge: p.badge || '', description: p.description || '', sku: p.sku,
       specs: Array.isArray(p.specs) ? p.specs : [],
     })
-    setImageFile(null)
-    setImagePreview(p.image_url || null)
+    setGallery(
+      (Array.isArray(p.images) && p.images.length
+        ? p.images
+        : [p.image_url].filter(Boolean)
+      ).map((url) => ({ url }))
+    )
     setEditing(p.id)
   }
 
+  /* Gallery editing. `gallery` holds a mix of:
+       { url }            — already uploaded (existing product image)
+       { file, preview }  — newly picked, uploaded on save
+     The FIRST entry is the primary image used on cards/cart. */
+  const MAX_IMAGES = 5
+
   const pickImage = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setGallery((g) => [
+      ...g,
+      ...files.slice(0, MAX_IMAGES - g.length).map((file) => ({ file, preview: URL.createObjectURL(file) })),
+    ])
+    e.target.value = '' // let the same file be picked again after removing
   }
+
+  const removeImage = (i) => setGallery((g) => g.filter((_, j) => j !== i))
+  const makePrimary = (i) =>
+    setGallery((g) => (i === 0 ? g : [g[i], ...g.filter((_, j) => j !== i)]))
 
   const save = async (e) => {
     e.preventDefault()
     setSaving(true)
     setError(null)
 
-    let imageUrl
-    if (imageFile) {
-      const { url, error: upErr } = await uploadProductImage(imageFile)
+    // upload any newly picked files, keeping the gallery order intact
+    const urls = []
+    for (const item of gallery) {
+      if (item.url) { urls.push(item.url); continue }
+      const { url, error: upErr } = await uploadProductImage(item.file)
       if (upErr) {
         setError(`Image upload failed: ${upErr}`)
         setSaving(false)
         return
       }
-      imageUrl = url
+      urls.push(url)
     }
+    const imageUrl = urls[0] // primary — keeps image_url in sync with images[0]
 
     const fields = {
       name: form.name.trim(),
@@ -119,7 +137,9 @@ export default function AdminProducts() {
           .filter((s) => s.k && s.v)
         return rows.length ? rows : null
       })(),
-      ...(imageUrl ? { image_url: imageUrl } : {}),
+      images: urls.length ? urls : null,
+      // keep the legacy single column pointing at the primary image
+      ...(urls.length ? { image_url: imageUrl } : {}),
     }
 
     let err
@@ -270,19 +290,51 @@ export default function AdminProducts() {
               <button type="button" onClick={() => setEditing(null)} className="text-gray-400 hover:text-gray-600"><FiX size={20} /></button>
             </div>
 
-            {/* image upload */}
-            <label className="flex items-center gap-4 mb-5 cursor-pointer group">
-              <span className="w-20 h-20 rounded-xl bg-secondary-50 border border-dashed border-secondary-200 flex items-center justify-center overflow-hidden shrink-0 group-hover:border-secondary-400 transition-colors">
-                {imagePreview
-                  ? <img src={imagePreview} alt="Product" className="w-full h-full object-cover" />
-                  : <FiImage size={24} className="text-secondary-300" />}
-              </span>
-              <span className="text-sm">
-                <span className="inline-flex items-center gap-1.5 font-semibold text-primary-700 group-hover:underline"><FiUpload size={14} /> {imagePreview ? 'Change photo' : 'Upload photo'}</span>
-                <span className="block text-xs text-gray-400 mt-0.5">JPG or PNG. Shown on the store.</span>
-              </span>
-              <input type="file" accept="image/*" onChange={pickImage} className="hidden" />
-            </label>
+            {/* image gallery — first tile is the primary image */}
+            <div className="mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">Photos</span>
+                <span className="text-xs text-gray-400">{gallery.length}/{MAX_IMAGES} · first one is the main photo</span>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {gallery.map((img, i) => (
+                  <div key={i} className="relative group">
+                    <span className={`block w-20 h-20 rounded-xl overflow-hidden border-2 ${i === 0 ? 'border-secondary-500' : 'border-gray-200'}`}>
+                      <img src={img.url || img.preview} alt="" className="w-full h-full object-cover" />
+                    </span>
+                    {i === 0 && (
+                      <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-wide bg-secondary-500 text-white px-1.5 py-0.5 rounded-full">Main</span>
+                    )}
+                    <button
+                      type="button" onClick={() => removeImage(i)} aria-label="Remove photo"
+                      className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white border border-gray-200 shadow text-gray-500 hover:text-red-600 flex items-center justify-center"
+                    >
+                      <FiX size={12} />
+                    </button>
+                    {i !== 0 && (
+                      <button
+                        type="button" onClick={() => makePrimary(i)}
+                        className="absolute inset-x-0 bottom-0 text-[10px] font-semibold bg-black/60 text-white py-0.5 opacity-0 group-hover:opacity-100 transition-opacity rounded-b-lg"
+                      >
+                        Make main
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {gallery.length < MAX_IMAGES && (
+                  <label className="w-20 h-20 rounded-xl bg-secondary-50 border border-dashed border-secondary-200 flex flex-col items-center justify-center cursor-pointer hover:border-secondary-400 transition-colors shrink-0">
+                    <FiUpload size={18} className="text-secondary-400" />
+                    <span className="text-[10px] text-secondary-600 font-semibold mt-1">Add</span>
+                    <input type="file" accept="image/*" multiple onChange={pickImage} className="hidden" />
+                  </label>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                JPG or PNG. Pick several at once — customers can swipe through them on the product page.
+              </p>
+            </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
               <label className="block sm:col-span-2">
