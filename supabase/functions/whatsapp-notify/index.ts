@@ -113,7 +113,13 @@ serve(async (req) => {
     let result = await sendTemplate(to, "order_update", params, "en");
     if (!result.ok) result = await sendTemplate(to, "order_update", params, "en_US");
     let templateUsed = "order_update";
+    // Keep Meta's reason for the real template failing — otherwise a successful
+    // fallback hides it and the log gives no clue why customers get hello_world.
+    let realTemplateError = "";
     if (!result.ok) {
+      realTemplateError = String(
+        result.json?.error?.error_user_msg || result.json?.error?.message || "unknown error",
+      );
       const fallback = await sendTemplate(to, "hello_world", []);
       if (fallback.ok) {
         result = fallback;
@@ -127,7 +133,9 @@ serve(async (req) => {
       message_type: `order_${new_status}`,
       phone_number: to,
       message_text: result.ok
-        ? (templateUsed === "hello_world" ? `[hello_world fallback] ${messageText}` : messageText)
+        ? (templateUsed === "hello_world"
+            ? `[hello_world fallback] ${messageText} — order_update failed: ${realTemplateError}`
+            : messageText)
         : `[FAILED] ${messageText} — ${JSON.stringify(result.json?.error?.message || result.json)}`,
       direction: "outbound",
     });
