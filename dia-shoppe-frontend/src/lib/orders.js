@@ -74,6 +74,8 @@ export async function createOrder({
       payment_method: paymentMethod,
       shipping_name: form.name,
       shipping_phone: form.phone,
+      // needed for the confirmation email — guests have no account address
+      shipping_email: form.email || null,
       shipping_address: address,
       shipping_city: form.city,
       shipping_state: form.state,

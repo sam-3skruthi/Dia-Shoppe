@@ -181,22 +181,8 @@ serve(async (req) => {
       await supabase.from("products").update({ stock_qty: newQty }).eq("id", item.product_id);
     }
 
-    // Confirmation email — best-effort, never blocks the success response
-    try {
-      if (user.email) {
-        await sendConfirmationEmail(
-          user.email,
-          order,
-          items.map((i) => ({
-            name: i.products?.name || `Product #${i.product_id}`,
-            quantity: i.quantity,
-            price: Number(i.price_at_purchase),
-          }))
-        );
-      }
-    } catch (emailError) {
-      console.error("Email send failed:", emailError);
-    }
+    // The confirmation email is sent by the order-email function, which fires
+    // from a DB trigger on 'confirmed' — so cash-on-delivery orders get one too.
 
     // Analytics — best-effort
     try {
