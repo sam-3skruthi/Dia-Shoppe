@@ -43,14 +43,14 @@ function normalizePhone(raw: string): string | null {
   return null;
 }
 
-async function sendTemplate(to: string, template: string, params: string[]) {
+async function sendTemplate(to: string, template: string, params: string[], lang?: string) {
   const body: Record<string, unknown> = {
     messaging_product: "whatsapp",
     to,
     type: "template",
     template: {
       name: template,
-      language: { code: template === "hello_world" ? "en_US" : "en" },
+      language: { code: lang ?? (template === "hello_world" ? "en_US" : "en") },
       ...(params.length
         ? { components: [{ type: "body", parameters: params.map((t) => ({ type: "text", text: t })) }] }
         : {}),
@@ -106,7 +106,12 @@ serve(async (req) => {
     // order_update is our approved utility template; until Meta finishes
     // reviewing it, fall back to the sandbox hello_world template so the
     // pipeline can still be demoed end to end
-    let result = await sendTemplate(to, "order_update", [firstName, String(order.id), new_status, extra]);
+    // Meta stores a template per language, and "English" vs "English (US)" are
+    // different codes. Try both before giving up, so an approved template is
+    // never skipped just because it was created under the other one.
+    const params = [firstName, String(order.id), new_status, extra];
+    let result = await sendTemplate(to, "order_update", params, "en");
+    if (!result.ok) result = await sendTemplate(to, "order_update", params, "en_US");
     let templateUsed = "order_update";
     if (!result.ok) {
       const fallback = await sendTemplate(to, "hello_world", []);
