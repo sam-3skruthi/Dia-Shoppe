@@ -71,8 +71,17 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-gray-800 py-4 text-center text-xs text-gray-500">
-        © 2024 Dia Shoppe Surgical Distributors. All rights reserved. &nbsp;|&nbsp; Trusted since 2004
+      <div className="border-t border-gray-800 py-4 px-4">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-gray-500 mb-2">
+          <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+          <span aria-hidden="true">|</span>
+          <Link to="/terms" className="hover:text-white transition-colors">Terms &amp; Conditions</Link>
+          <span aria-hidden="true">|</span>
+          <Link to="/refunds" className="hover:text-white transition-colors">Shipping, Returns &amp; Refunds</Link>
+        </div>
+        <div className="text-center text-xs text-gray-500">
+          © {new Date().getFullYear()} Dia Shoppe Surgical Distributors. All rights reserved. &nbsp;|&nbsp; Trusted since 2004
+        </div>
       </div>
     </footer>
   )

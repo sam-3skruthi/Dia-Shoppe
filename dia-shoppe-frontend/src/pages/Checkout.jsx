@@ -148,7 +148,27 @@ export default function Checkout() {
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="Full Name" name="name" required placeholder="Ramesh Kumar" defaultValue={user.name || ''} />
-                <Field label="Phone Number" name="phone" type="tel" required placeholder="+91 98765 43210" />
+                {/* Indian mobiles are 10 digits starting 6-9; an optional +91/0
+                    prefix is allowed. Catches typos that would silently break
+                    the WhatsApp order updates. */}
+                <Field
+                  label="Phone Number"
+                  name="phone"
+                  type="tel"
+                  required
+                  inputMode="tel"
+                  placeholder="98765 43210"
+                  pattern="(\+?91[\-\s]?|0)?[6-9][0-9]{9}"
+                  title="Enter a 10-digit Indian mobile number starting with 6, 7, 8 or 9"
+                  onInput={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '').replace(/^(91|0)/, '')
+                    e.target.setCustomValidity(
+                      digits.length === 10 && /^[6-9]/.test(digits)
+                        ? ''
+                        : 'Enter a 10-digit mobile number starting with 6, 7, 8 or 9 — we send order updates to it.'
+                    )
+                  }}
+                />
                 <div className="sm:col-span-2">
                   <Field label="Email Address" name="email" type="email" required placeholder="you@example.com" defaultValue={user.email || ''} />
                 </div>

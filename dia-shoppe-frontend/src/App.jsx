@@ -14,6 +14,9 @@ import OrderConfirmation from './pages/OrderConfirmation'
 import Orders from './pages/Orders'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
+import Refunds from './pages/Refunds'
 import AdminRoute from './components/admin/AdminRoute'
 import AdminDashboard from './pages/admin/Dashboard'
 import AdminProducts from './pages/admin/AdminProducts'
@@ -37,6 +40,9 @@ const TITLES = {
   '/orders': 'My Orders — Dia Shoppe',
   '/login': 'Sign In — Dia Shoppe',
   '/signup': 'Create Account — Dia Shoppe',
+  '/privacy': 'Privacy Policy — Dia Shoppe',
+  '/terms': 'Terms & Conditions — Dia Shoppe',
+  '/refunds': 'Shipping, Returns & Refunds — Dia Shoppe',
 }
 function titleFor(pathname) {
   if (TITLES[pathname]) return TITLES[pathname]
@@ -91,6 +97,11 @@ function App() {
             <Route path="/admin/social" element={<AdminRoute><AdminSocial /></AdminRoute>} />
             <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+
+            {/* Legal — linked from the footer; Razorpay and Meta check these */}
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/refunds" element={<Refunds />} />
 
             {/* Catch-all 404 — keep last */}
             <Route path="*" element={<NotFound />} />
