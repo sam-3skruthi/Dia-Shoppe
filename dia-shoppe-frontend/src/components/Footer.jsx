@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { business } from '../data/business'
 import { FiPhone, FiMail, FiMapPin, FiFacebook, FiInstagram, FiTwitter } from 'react-icons/fi'
 
 export default function Footer() {
@@ -56,15 +57,15 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2">
                 <FiMapPin size={16} className="mt-0.5 text-primary-400 shrink-0" />
-                <span>Dia Shoppe, India — PAN India Delivery</span>
+                <span>{business.address}</span>
               </li>
               <li className="flex items-center gap-2">
                 <FiPhone size={16} className="text-primary-400 shrink-0" />
-                <span>+91 98765 43210</span>
+                <a href={`tel:${business.phone.replace(/\s/g, '')}`} className="hover:text-white transition-colors">{business.phone.trim()}</a>
               </li>
               <li className="flex items-center gap-2">
                 <FiMail size={16} className="text-primary-400 shrink-0" />
-                <span>support@diashoppe.in</span>
+                <a href={`mailto:${business.email}`} className="hover:text-white transition-colors">{business.email}</a>
               </li>
             </ul>
           </div>

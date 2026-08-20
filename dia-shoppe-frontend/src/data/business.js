@@ -15,15 +15,14 @@ export const business = {
   tradingName: 'Dia Shoppe',
 
   // TODO: your full registered address
-  address: 'TODO: Registered address, City, State, PIN',
+  address: 'Door No, 1989, Kothwal Ramaiah St, Devaraja Mohalla, Shivarampet, Mysuru, Karnataka 570001',
 
   // TODO: leave as null if not registered for GST
-  gstin: null,
 
   email: 'support@diashoppe.in',
 
   // TODO: replace with the real business number (the current one is a placeholder)
-  phone: 'TODO: +91 XXXXX XXXXX',
+  phone: ' +91 98451 44804',
 
   website: 'https://www.diashoppe.com',
 
