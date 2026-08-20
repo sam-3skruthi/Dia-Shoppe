@@ -29,6 +29,12 @@ const testimonials = [
   { name: 'Anil Verma',        role: 'Customer, Mumbai',              text: 'Bought a nebulizer for my father. Original Philips unit, sealed box, delivered fast. Highly recommended.', rating: 4 },
 ]
 
+/* Certification scans shown in the About section. Add an entry per image
+   placed in /public/certificates — the section stays hidden while empty. */
+const CERTIFICATES = [
+  // { file: 'iso-9001.jpg', label: 'ISO 9001:2015 Certified' },
+]
+
 // testimonials rotate in vertical groups of 3
 const T_GROUPS = Math.ceil(testimonials.length / 3)
 
@@ -256,8 +262,26 @@ export default function Home() {
             <h2 className="font-display text-3xl sm:text-4xl font-semibold text-ink-900 mt-3">Certified &amp; Recognised</h2>
             <p className="text-gray-500 mt-2">Our certifications and industry recognitions</p>
           </Reveal>
-          {/* certificate images go here */}
-          <div className="mt-10 min-h-[200px]" aria-hidden="true" />
+          {/* Drop the certificate scans into /public/certificates and list the
+              filenames in CERTIFICATES above. Until then the grid renders
+              nothing rather than leaving an empty 200px band on the page. */}
+          {CERTIFICATES.length > 0 && (
+            <Stagger className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 mt-10">
+              {CERTIFICATES.map((c) => (
+                <StaggerItem key={c.file}>
+                  <figure className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 h-full flex flex-col">
+                    <img
+                      src={`/certificates/${c.file}`}
+                      alt={c.label}
+                      loading="lazy"
+                      className="w-full h-40 object-contain rounded-lg bg-gray-50"
+                    />
+                    <figcaption className="text-xs text-gray-500 text-center mt-2 leading-snug">{c.label}</figcaption>
+                  </figure>
+                </StaggerItem>
+              ))}
+            </Stagger>
+          )}
         </div>
       </section>
 
