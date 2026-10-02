@@ -5,6 +5,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID")!;
 const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET")!;
+// overridable so DEV can point at a mock instead of the real Razorpay API
+const RAZORPAY_API_BASE = Deno.env.get("RAZORPAY_API_BASE") || "https://api.razorpay.com";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -35,7 +37,7 @@ serve(async (req) => {
     // Re-derive the amount server-side from the DB — never trust a client-supplied amount
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, user_id, total_amount, razorpay_order_id")
+      .select("id, user_id, status, total_amount, razorpay_order_id")
       .eq("id", orderId)
       .single();
 
@@ -48,6 +50,13 @@ serve(async (req) => {
     if (order.user_id !== user.id) {
       return new Response(JSON.stringify({ error: "Not your order" }), {
         status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // A cancelled/expired/paid order must never get a payment window
+    if (order.status !== "pending") {
+      return new Response(JSON.stringify({ error: "This order is no longer awaiting payment" }), {
+        status: 409,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -68,7 +77,7 @@ serve(async (req) => {
 
     const auth = btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
 
-    const response = await fetch("https://api.razorpay.com/v1/orders", {
+    const response = await fetch(`${RAZORPAY_API_BASE}/v1/orders`, {
       method: "POST",
       headers: {
         Authorization: `Basic ${auth}`,

@@ -28,7 +28,9 @@ const STATUS_MAP: Record<string, string> = {
   "pickup generated": "shipped",
   "picked up": "shipped",
   "delivered": "delivered",
-  "rto delivered": "cancelled",
+  // returned to origin: NOT a cancellation and NOT an automatic refund.
+  // The order is marked rto, stock is restored, and an admin reviews the refund.
+  "rto delivered": "rto",
   "cancelled": "cancelled",
   "canceled": "cancelled",
 };
@@ -102,7 +104,7 @@ Deno.serve(async (req) => {
     if (courier) patch.courier = courier;
 
     // Never move a finished order backwards, and never resurrect a cancelled one.
-    const terminal = new Set(["delivered", "cancelled"]);
+    const terminal = new Set(["delivered", "cancelled", "rto"]);
     if (mapped && !terminal.has(order.status) && order.status !== mapped) {
       patch.status = mapped;
       if (mapped === "cancelled") {

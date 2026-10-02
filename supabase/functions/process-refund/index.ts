@@ -1,33 +1,31 @@
-// process-refund — issues the Razorpay refund automatically when an order is
-// cancelled, and records the outcome so admins can see it.
+// process-refund — executes ONE approved refund request against Razorpay.
 //
-// Called by a DB trigger (migration 027) whenever orders.status becomes
-// 'cancelled'. Real money moves here, so the function is deliberately strict:
+// Money moves here, so everything is gated by the database:
+//   * the caller must hold the process-refund hook secret (sent by the
+//     trg_dispatch_refund trigger, which fires only when a refund_request
+//     becomes 'approved' - either automatically for customer/admin cancellations
+//     and late payments, or by an ADMIN for RTO / courier / amount-mismatch);
+//   * the request is CLAIMED atomically (approved -> processing), so two
+//     concurrent calls can never both refund;
+//   * a partial unique index guarantees one live refund per payment;
+//   * every outcome is written back (processed / failed + error) and audited.
 //
-//   • only refunds orders that were actually PAID ONLINE (COD has nothing to
-//     refund — it is marked 'not_applicable')
-//   • never refunds twice: it bails if refund_id is already set, and it also
-//     passes a Razorpay idempotency key so a retried call cannot double-pay
-//   • every attempt (success or failure) is written to the order row, so a
-//     failed refund is visible in the admin Orders list instead of silent
-//
-// Secrets required: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, REFUND_HOOK_SECRET
+// Secrets: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, REFUND_HOOK_SECRET
+// Optional: RAZORPAY_API_BASE (DEV mock).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID")!;
 const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET")!;
-const HOOK_SECRET = Deno.env.get("REFUND_HOOK_SECRET")!;
+const RAZORPAY_API_BASE = Deno.env.get("RAZORPAY_API_BASE") || "https://api.razorpay.com";
+const HOOK_SECRET = Deno.env.get("REFUND_HOOK_SECRET");
 
 const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
+  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
 Deno.serve(async (req) => {
-  // only our DB trigger may call this
-  if (req.headers.get("x-hook-secret") !== HOOK_SECRET) {
+  // fail closed: no configured secret means nobody is authorised
+  if (!HOOK_SECRET || req.headers.get("x-hook-secret") !== HOOK_SECRET) {
     return json({ error: "unauthorized" }, 401);
   }
 
@@ -37,76 +35,77 @@ Deno.serve(async (req) => {
   );
 
   try {
-    const { order_id } = await req.json();
-    if (!order_id) return json({ error: "order_id required" }, 400);
+    const { refund_request_id } = await req.json();
+    if (!refund_request_id) return json({ error: "refund_request_id required" }, 400);
 
-    const { data: order } = await supabase
-      .from("orders")
-      .select("id, status, payment_method, payment_id, total_amount, refund_id, refund_status")
-      .eq("id", order_id)
+    // atomic claim: only an 'approved' request can start, and only once
+    const { data: claimed } = await supabase
+      .from("refund_requests")
+      .update({ status: "processing" })
+      .eq("id", refund_request_id)
+      .eq("status", "approved")
+      .select("id, payment_id, order_id, amount, attempts")
       .maybeSingle();
+    if (!claimed) return json({ skipped: "not in approved state (already handled, awaiting approval, or unknown)" });
 
-    if (!order) return json({ skipped: "unknown order" });
-    if (order.status !== "cancelled") return json({ skipped: "order is not cancelled" });
-    if (order.refund_id) return json({ skipped: "already refunded", refund_id: order.refund_id });
+    await supabase.from("refund_requests").update({ attempts: claimed.attempts + 1 }).eq("id", claimed.id);
 
-    // Cash on delivery — nothing was collected, so nothing to send back.
-    if (order.payment_method === "cod" || !order.payment_id) {
-      await supabase
-        .from("orders")
-        .update({ refund_status: "not_applicable", refund_at: new Date().toISOString() })
-        .eq("id", order.id);
-      return json({ skipped: "cod / unpaid — no refund needed" });
+    const { data: payment } = await supabase
+      .from("payments").select("id, razorpay_payment_id, amount").eq("id", claimed.payment_id).single();
+    if (!payment) {
+      await supabase.from("refund_requests")
+        .update({ status: "failed", error: "payment row not found" }).eq("id", claimed.id);
+      return json({ refunded: false, error: "payment row not found" });
     }
 
-    // Razorpay works in paise
-    const amountPaise = Math.round(Number(order.total_amount) * 100);
+    const amountPaise = Math.round(Number(claimed.amount) * 100);
+    if (amountPaise > Math.round(Number(payment.amount) * 100)) {
+      await supabase.from("refund_requests")
+        .update({ status: "failed", error: "refund amount exceeds captured amount" }).eq("id", claimed.id);
+      return json({ refunded: false, error: "refund amount exceeds captured amount" });
+    }
+
     const auth = btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
-
-    const res = await fetch(`https://api.razorpay.com/v1/payments/${order.payment_id}/refund`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/json",
-        // guarantees Razorpay itself rejects an accidental duplicate
-        "X-Payment-Idempotency": `refund-${order.id}`,
-      },
-      body: JSON.stringify({
-        amount: amountPaise,
-        speed: "normal",
-        notes: { order_id: String(order.id), reason: "Order cancelled" },
-      }),
-    });
-
-    const body = await res.json();
+    let res: Response, body: any;
+    try {
+      res = await fetch(`${RAZORPAY_API_BASE}/v1/payments/${payment.razorpay_payment_id}/refund`, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+          "X-Payment-Idempotency": `refund-req-${claimed.id}`,
+        },
+        body: JSON.stringify({
+          amount: amountPaise,
+          speed: "normal",
+          notes: { order_id: String(claimed.order_id), refund_request_id: String(claimed.id) },
+        }),
+      });
+      body = await res.json();
+    } catch (netErr) {
+      await supabase.from("refund_requests")
+        .update({ status: "failed", error: `network: ${String(netErr)}` }).eq("id", claimed.id);
+      return json({ refunded: false, error: "network error" });
+    }
 
     if (!res.ok) {
       const message = body?.error?.description || `Razorpay returned ${res.status}`;
-      await supabase
-        .from("orders")
-        .update({
-          refund_status: "failed",
-          refund_error: message,
-          refund_at: new Date().toISOString(),
-        })
-        .eq("id", order.id);
-      // 200 so pg_net does not spin; the failure is recorded for the admin
+      await supabase.from("refund_requests").update({ status: "failed", error: message }).eq("id", claimed.id);
+      // 200 so pg_net does not spin; the failure is stored and visible to admins
       return json({ refunded: false, error: message });
     }
 
-    await supabase
-      .from("orders")
-      .update({
-        refund_id: body.id,
-        refund_status: body.status === "processed" ? "processed" : "pending",
-        refund_amount: amountPaise / 100,
-        refund_error: null,
-        refund_at: new Date().toISOString(),
-      })
-      .eq("id", order.id);
+    await supabase.from("refund_requests").update({
+      status: "processed",
+      razorpay_refund_id: body.id,
+      error: null,
+      processed_at: new Date().toISOString(),
+    }).eq("id", claimed.id);
+    await supabase.from("payments").update({ status: "refunded" }).eq("id", payment.id);
 
     return json({ refunded: true, refund_id: body.id, status: body.status });
   } catch (err) {
+    console.error("process-refund error:", err);
     return json({ refunded: false, error: String(err) });
   }
 });

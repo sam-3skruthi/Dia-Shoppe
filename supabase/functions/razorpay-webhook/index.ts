@@ -65,28 +65,23 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { data: order } = await supabase
-      .from("orders")
-      .select("id, status, user_id, total_amount")
-      .eq("razorpay_order_id", razorpayOrderId)
-      .maybeSingle();
-
-    if (!order) {
-      // Unknown order — acknowledge anyway (could be a stale test event)
-      return new Response(JSON.stringify({ received: true }), { status: 200 });
-    }
-
-    // One atomic DB call: confirms the order if it is still pending AND takes
-    // stock, in one transaction. If verify-payment got there first this is a
-    // no-op, and it still makes sure stock was taken (replay-safe).
-    const { data: result, error: confirmError } = await supabase.rpc("confirm_online_payment", {
-      p_order_id: order.id,
+    // One atomic DB call: ledger entry + confirm-if-pending + stock, or an
+    // automatic full refund if the order was cancelled before the money arrived.
+    // Duplicate deliveries of the same payment are no-ops.
+    const { data: result, error: settleError } = await supabase.rpc("settle_payment", {
       p_payment_id: paymentId,
+      p_rzp_order_id: razorpayOrderId,
+      p_amount_paise: payment.amount,
+      p_source: "razorpay-webhook",
+      p_raw: payment,
     });
-    if (confirmError) throw confirmError; // 500 -> Razorpay retries the webhook
-    if (!result?.won) {
-      return new Response(JSON.stringify({ received: true, alreadyProcessed: true }), { status: 200 });
+    if (settleError) throw settleError; // 500 -> Razorpay retries the webhook
+    if (result?.result !== "confirmed") {
+      return new Response(JSON.stringify({ received: true, result: result?.result }), { status: 200 });
     }
+    const { data: order } = await supabase
+      .from("orders").select("id, user_id, total_amount").eq("razorpay_order_id", razorpayOrderId).maybeSingle();
+    if (!order) return new Response(JSON.stringify({ received: true }), { status: 200 });
 
     // Analytics — best-effort, never fails the webhook ack
     try {

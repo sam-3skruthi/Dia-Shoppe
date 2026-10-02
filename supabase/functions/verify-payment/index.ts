@@ -6,6 +6,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET")!;
+const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID")!;
+// overridable so DEV can point at a mock instead of the real Razorpay API
+const RAZORPAY_API_BASE = Deno.env.get("RAZORPAY_API_BASE") || "https://api.razorpay.com";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -148,17 +151,42 @@ serve(async (req) => {
       });
     }
 
-    // One atomic DB call: confirms the order (only if still pending) AND takes
-    // stock, in a single transaction. Safe against the webhook racing us, and
-    // safe to repeat - a replay changes nothing.
-    const { data: result, error: confirmError } = await supabase.rpc("confirm_online_payment", {
-      p_order_id: order.id,
-      p_payment_id: razorpay_payment_id,
+    // Ask Razorpay (server to server) what was really captured - the amount and
+    // order come from Razorpay, never from the browser.
+    const pr = await fetch(`${RAZORPAY_API_BASE}/v1/payments/${encodeURIComponent(razorpay_payment_id)}`, {
+      headers: { Authorization: `Basic ${btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}` },
     });
-    if (confirmError) throw confirmError;
+    const payment = await pr.json();
+    if (!pr.ok || payment.order_id !== razorpay_order_id) {
+      return new Response(JSON.stringify({ success: false, error: "Could not confirm the payment with Razorpay" }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (!result?.won) {
-      // The webhook (or an earlier call) already processed this payment
+    // ONE atomic DB call records the payment in the ledger, confirms the order
+    // (only if still pending) and takes stock. If the order was cancelled first,
+    // it creates an automatic full refund instead. Safe to repeat and to race the
+    // webhook.
+    const { data: result, error: settleError } = await supabase.rpc("settle_payment", {
+      p_payment_id: razorpay_payment_id,
+      p_rzp_order_id: razorpay_order_id,
+      p_amount_paise: payment.amount,
+      p_source: "verify-payment",
+      p_raw: payment,
+    });
+    if (settleError) throw settleError;
+
+    const refunded = ["late_payment_refund", "duplicate_payment_refund", "amount_mismatch"].includes(result?.result) ||
+      (result?.result === "duplicate_event" && ["cancelled", "rto"].includes(result?.order_status));
+    if (refunded) {
+      // never tell the customer "paid" for an order that is not going ahead
+      const code = result.result === "amount_mismatch" ? "AMOUNT_MISMATCH_UNDER_REVIEW" : "ORDER_CANCELLED_REFUND_INITIATED";
+      return new Response(JSON.stringify({ success: false, code, error: "This order was cancelled before your payment arrived. A full refund has been started." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (result?.result !== "confirmed") {
       return new Response(JSON.stringify({ success: true, alreadyProcessed: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
