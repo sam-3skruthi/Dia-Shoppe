@@ -23,13 +23,7 @@ export async function fetchAdminProducts() {
     .from('products')
     .select('*, categories(slug, name)')
     .order('id')
-  if (error) return { products: [], error: error.message }
-  // cost_price lives in the admin-only product_costs table (migration 032);
-  // products.cost_price is always NULL for everyone.
-  const { data: costs } = await supabase.from('product_costs').select('product_id, cost_price')
-  const costById = new Map((costs || []).map((c) => [c.product_id, c.cost_price]))
-  const products = (data || []).map((p) => ({ ...p, cost_price: costById.get(p.id) ?? null }))
-  return { products, error: null }
+  return { products: data || [], error: error?.message || null }
 }
 
 /*
