@@ -57,7 +57,8 @@ function buildHtml(
 }
 
 Deno.serve(async (req) => {
-  if (HOOK_SECRET && req.headers.get("x-hook-secret") !== HOOK_SECRET) {
+  // fail closed: with no secret configured nobody is authorised
+  if (!HOOK_SECRET || req.headers.get("x-hook-secret") !== HOOK_SECRET) {
     return json({ error: "unauthorized" }, 401);
   }
   if (!RESEND_API_KEY) return json({ skipped: "RESEND_API_KEY not set" });

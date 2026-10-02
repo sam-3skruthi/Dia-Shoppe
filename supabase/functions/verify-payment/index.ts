@@ -148,37 +148,20 @@ serve(async (req) => {
       });
     }
 
-    // Idempotent: if this order was already marked paid (e.g. retry, or the
-    // webhook beat us to it), just return success without decrementing stock twice
-    if (order.status === "paid" || order.status === "confirmed") {
+    // One atomic DB call: confirms the order (only if still pending) AND takes
+    // stock, in a single transaction. Safe against the webhook racing us, and
+    // safe to repeat - a replay changes nothing.
+    const { data: result, error: confirmError } = await supabase.rpc("confirm_online_payment", {
+      p_order_id: order.id,
+      p_payment_id: razorpay_payment_id,
+    });
+    if (confirmError) throw confirmError;
+
+    if (!result?.won) {
+      // The webhook (or an earlier call) already processed this payment
       return new Response(JSON.stringify({ success: true, alreadyProcessed: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    }
-
-    // Payment verified → confirm straight away (no manual confirm step), so the
-    // customer gets the WhatsApp confirmation the moment they finish paying.
-    const { error: updateError } = await supabase
-      .from("orders")
-      .update({ status: "confirmed", payment_id: razorpay_payment_id })
-      .eq("id", order.id);
-    if (updateError) throw updateError;
-
-    // Decrement stock for each item in the order
-    const { data: items, error: itemsError } = await supabase
-      .from("order_items")
-      .select("product_id, quantity, price_at_purchase, products(name)")
-      .eq("order_id", order.id);
-    if (itemsError) throw itemsError;
-
-    for (const item of items) {
-      const { data: product } = await supabase
-        .from("products")
-        .select("stock_qty")
-        .eq("id", item.product_id)
-        .single();
-      const newQty = Math.max(0, (product?.stock_qty ?? 0) - item.quantity);
-      await supabase.from("products").update({ stock_qty: newQty }).eq("id", item.product_id);
     }
 
     // The confirmation email is sent by the order-email function, which fires

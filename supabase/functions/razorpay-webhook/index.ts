@@ -76,33 +76,16 @@ serve(async (req) => {
       return new Response(JSON.stringify({ received: true }), { status: 200 });
     }
 
-    // Idempotent: verify-payment (or an earlier webhook delivery) already
-    // handled it — stock was decremented then, so never do it twice
-    if (order.status !== "pending") {
+    // One atomic DB call: confirms the order if it is still pending AND takes
+    // stock, in one transaction. If verify-payment got there first this is a
+    // no-op, and it still makes sure stock was taken (replay-safe).
+    const { data: result, error: confirmError } = await supabase.rpc("confirm_online_payment", {
+      p_order_id: order.id,
+      p_payment_id: paymentId,
+    });
+    if (confirmError) throw confirmError; // 500 -> Razorpay retries the webhook
+    if (!result?.won) {
       return new Response(JSON.stringify({ received: true, alreadyProcessed: true }), { status: 200 });
-    }
-
-    // Payment succeeded → confirm straight away (no manual confirm step).
-    // The whatsapp-notify trigger fires on 'confirmed' and tells the customer.
-    await supabase
-      .from("orders")
-      .update({ status: "confirmed", payment_id: paymentId })
-      .eq("id", order.id);
-
-    // Decrement stock (same rule as verify-payment)
-    const { data: items } = await supabase
-      .from("order_items")
-      .select("product_id, quantity")
-      .eq("order_id", order.id);
-
-    for (const item of items ?? []) {
-      const { data: product } = await supabase
-        .from("products")
-        .select("stock_qty")
-        .eq("id", item.product_id)
-        .single();
-      const newQty = Math.max(0, (product?.stock_qty ?? 0) - item.quantity);
-      await supabase.from("products").update({ stock_qty: newQty }).eq("id", item.product_id);
     }
 
     // Analytics — best-effort, never fails the webhook ack

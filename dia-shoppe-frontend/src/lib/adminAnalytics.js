@@ -12,10 +12,13 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export async function fetchAnalytics() {
   const { data, error } = await supabase
     .from('orders')
-    .select('id, user_id, created_at, status, payment_method, total_amount, shipping_city, shipping_state, source, order_items(quantity, price_at_purchase, products(name, brand, cost_price, categories(name)))')
+    .select('id, user_id, created_at, status, payment_method, total_amount, shipping_city, shipping_state, source, order_items(quantity, price_at_purchase, products(id, name, brand, categories(name)))')
     .order('created_at', { ascending: true })
   if (error) return { error: error.message }
 
+  // cost_price is admin-only and lives in product_costs (migration 032)
+  const { data: costRows } = await supabase.from('product_costs').select('product_id, cost_price')
+  const costById = new Map((costRows || []).map((c) => [c.product_id, c.cost_price]))
   const orders = data || []
   const sales = orders.filter((o) => REVENUE_STATUSES.has(o.status))
   const now = new Date()
@@ -72,7 +75,7 @@ export async function fetchAnalytics() {
   for (const o of sales) {
     for (const oi of o.order_items || []) {
       const amount = oi.quantity * Number(oi.price_at_purchase)
-      const cost = oi.products?.cost_price
+      const cost = costById.get(oi.products?.id)
       const hasCost = cost !== null && cost !== undefined
       const itemProfit = hasCost ? oi.quantity * (Number(oi.price_at_purchase) - Number(cost)) : 0
       if (hasCost) { grossProfit += itemProfit; costKnownRevenue += amount }
