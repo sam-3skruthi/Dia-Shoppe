@@ -8,7 +8,7 @@ if ($Ref -eq "vkcwfwgxelmamuydwrow") { throw "DEV only: refusing to run against 
 $token = [Environment]::GetEnvironmentVariable("SUPABASE_ACCESS_TOKEN", "User")
 $h = @{ Authorization = "Bearer $token"; "User-Agent" = "Mozilla/5.0"; "Content-Type" = "application/json" }
 $fn = "https://$Ref.supabase.co/functions/v1"
-function Q([string]$sql) { Invoke-RestMethod -Method Post -Uri "https://api.supabase.com/v1/projects/$Ref/database/query" -Headers $h -Body ([Text.Encoding]::UTF8.GetBytes((@{ query = $sql } | ConvertTo-Json -Depth 3))) }
+function Q([string]$sql) { try { Invoke-RestMethod -Method Post -Uri "https://api.supabase.com/v1/projects/$Ref/database/query" -Headers $h -Body ([Text.Encoding]::UTF8.GetBytes((@{ query = $sql } | ConvertTo-Json -Depth 3))) } catch { throw ("SQL error: " + (($_.ErrorDetails.Message -replace '(sbp_|eyJ)[A-Za-z0-9._-]+','<redacted>') -replace '\s+',' ')) } }
 function Vault([string]$n) { (Q "select decrypted_secret s from vault.decrypted_secrets where name='$n'")[0].s }
 $whSecret = Vault "dev_test_razorpay_webhook_secret"; $courierTok = Vault "dev_test_courier_token"; $refundHook = Vault "hook_process_refund"
 $uid = (Q "select id from user_profiles where email='dev-customer@example.test'")[0].id
@@ -129,6 +129,42 @@ try {
   $pending = (Q "select id from refund_requests where status='requested' limit 1")[0].id
   $resp = Invoke-WebRequest -Method Post -Uri "$fn/process-refund" -Headers @{ "x-hook-secret" = $refundHook } -Body (@{ refund_request_id = $pending } | ConvertTo-Json) -ContentType "application/json" -UseBasicParsing
   Check "E8 valid secret but request not approved -> skipped, nothing refunded" ($resp.Content -like "*skipped*" -and (Q "select status s from refund_requests where id=$pending")[0].s -eq "requested")
+
+  # E9 crash recovery (migration 035): a refund must never be lost, never be reported as done without
+  # Razorpay confirming, and never be paid twice.
+  # E9a: Razorpay accepted the refund, but the function died before saving it -> row stuck in 'processing'
+  $o = New-Order 1; Post-Webhook $o (PayId captured ([long]($o.Total * 100)) $o "e9a") ([long]($o.Total * 100)) | Out-Null; Start-Sleep 2
+  Q "update orders set status='cancelled', cancelled_by='customer' where id=$($o.Id)" | Out-Null
+  [void](Wait-Refund $o.Id "processed")
+  $rid = (Q "select id from refund_requests where order_id=$($o.Id)")[0].id
+  Q "update refund_requests set status='processing', razorpay_refund_id=null, processed_at=null, processing_since=now()-interval '20 minutes' where id=$rid" | Out-Null
+  Check "E9a crash state is NOT shown as success (processing, no refund id)" ((Q "select status||'/'||coalesce(razorpay_refund_id,'-') s from refund_requests where id=$rid")[0].s -eq "processing/-")
+  $requeued = [int](Q "select private.requeue_stuck_refunds(15) as n")[0].n
+  Check "E9a stalled request re-queued by the recovery job" ($requeued -ge 1) "requeued=$requeued"
+  Check "E9a recovery RECONCILES with Razorpay -> processed" (Wait-Refund $o.Id "processed")
+  Check "E9a no second refund was created at Razorpay" ((Mock-Refunds "%$($o.Rzp)") -eq 1) "refunds=$(Mock-Refunds "%$($o.Rzp)")"
+  Check "E9a refund id recorded again" ((Q "select razorpay_refund_id r from refund_requests where id=$rid")[0].r -like "rfnd_mock_*")
+
+  # E9b: the function died BEFORE reaching Razorpay -> recovery performs the refund exactly once
+  $o = New-Order 1; Post-Webhook $o (PayId captured ([long]($o.Total * 100)) $o "e9b") ([long]($o.Total * 100)) | Out-Null; Start-Sleep 2
+  Q "update orders set status='cancelled', cancelled_by='customer' where id=$($o.Id)" | Out-Null
+  [void](Wait-Refund $o.Id "processed")
+  $rid = (Q "select id from refund_requests where order_id=$($o.Id)")[0].id
+  Q "delete from zz_mock_refunds where payment_id like '%$($o.Rzp)'" | Out-Null
+  Q "update refund_requests set status='processing', razorpay_refund_id=null, processed_at=null, processing_since=now()-interval '20 minutes' where id=$rid" | Out-Null
+  Q "select private.requeue_stuck_refunds(15)" | Out-Null
+  Check "E9b recovery completes the refund" (Wait-Refund $o.Id "processed")
+  Check "E9b exactly one refund at Razorpay" ((Mock-Refunds "%$($o.Rzp)") -eq 1)
+
+  # E9c: an attempt that is merely in flight (not stale) is left alone
+  $o = New-Order 1; Post-Webhook $o (PayId captured ([long]($o.Total * 100)) $o "e9c") ([long]($o.Total * 100)) | Out-Null; Start-Sleep 2
+  Q "update orders set status='cancelled', cancelled_by='customer' where id=$($o.Id)" | Out-Null
+  [void](Wait-Refund $o.Id "processed")
+  $rid = (Q "select id from refund_requests where order_id=$($o.Id)")[0].id
+  Q "update refund_requests set status='processing', processing_since=now()-interval '2 minutes' where id=$rid" | Out-Null
+  Q "select private.requeue_stuck_refunds(15)" | Out-Null
+  Check "E9c recent in-flight refund NOT re-queued" ((Q "select status s from refund_requests where id=$rid")[0].s -eq "processing")
+  Check "E9 recovery job scheduled every 10 min" ([int](Q "select count(*) c from cron.job where jobname='requeue-stuck-refunds'")[0].c -eq 1)
 }
 finally {
   Q "delete from zz_mock_refunds where payment_id like '%order_zzf_$stamp%'" | Out-Null

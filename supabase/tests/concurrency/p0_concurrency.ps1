@@ -92,22 +92,23 @@ try {
   if ([int](Q "select count(*) c from pg_proc where proname='settle_payment'")[0].c -gt 0) {
     # S6a: 8 simultaneous deliveries of the same captured payment
     $p6 = New-Product 20; $o6 = New-Order $p6 2 "order_zz_s6a_$stamp"; $amt = [int]([decimal](Q "select total_amount t from orders where id=$o6")[0].t * 100)
-    $rs = Parallel-Q (1..8 | ForEach-Object { "select public.settle_payment('pay_zz_s6a','order_zz_s6a_$stamp',$amt,'test') as r" })
+    $rs = Parallel-Q (1..8 | ForEach-Object { "select public.settle_payment('pay_zz_s6a_$stamp','order_zz_s6a_$stamp',$amt,'test') as r" })
     $kinds = @($rs | ForEach-Object { $_[0].r.result })
     Check "S6a exactly one 'confirmed', seven 'duplicate_event'" ((@($kinds | ? { $_ -eq 'confirmed' }).Count -eq 1) -and (@($kinds | ? { $_ -eq 'duplicate_event' }).Count -eq 7)) ($kinds -join ',')
-    Check "S6a one ledger row, stock taken once (20-2=18)" (([int](Q "select count(*) c from payments where razorpay_payment_id='pay_zz_s6a'")[0].c -eq 1) -and ((Stock $p6) -eq 18)) "stock=$(Stock $p6)"
+    Check "S6a one ledger row, stock taken once (20-2=18)" (([int](Q "select count(*) c from payments where razorpay_payment_id='pay_zz_s6a_$stamp'")[0].c -eq 1) -and ((Stock $p6) -eq 18)) "stock=$(Stock $p6)"
 
     # S6b: customer cancel RACES the payment, 10 orders. Whatever interleaving wins, the invariants must hold:
     #   order cancelled, exactly ONE live refund for the payment, stock back to the starting level, no negative stock.
-    $p7 = New-Product 30; $bad = @()
+    $p7 = New-Product 30; $bad = @(); $reasons = @{}
     1..10 | ForEach-Object {
       $o7 = New-Order $p7 1 "order_zz_s6b_${stamp}_$_"; $amt7 = [int]([decimal](Q "select total_amount t from orders where id=$o7")[0].t * 100)
       Parallel-Q @("update orders set status='cancelled', cancelled_by='customer' where id=$o7",
-                   "select public.settle_payment('pay_zz_s6b_$_','order_zz_s6b_${stamp}_$_',$amt7,'test') as r") | Out-Null
+                   "select public.settle_payment('pay_zz_s6b_${stamp}_$_','order_zz_s6b_${stamp}_$_',$amt7,'test') as r") | Out-Null
       $st = (Q "select o.status, (select count(*) from refund_requests rr join payments p on p.id=rr.payment_id where p.order_id=o.id and rr.status in ('requested','approved','processing','processed')) live from orders o where o.id=$o7")[0]
-      if ($st.status -ne 'cancelled' -or [int]$st.live -ne 1) { $bad += "order $o7 status=$($st.status) liveRefunds=$($st.live)" }
+      $rs7 = (Q "select string_agg(rr.reason, ',') r from refund_requests rr where rr.order_id=$o7")[0].r; $reasons[$rs7] = 1 + [int]$reasons[$rs7]
+      if ($st.status -ne 'cancelled' -or [int]$st.live -ne 1) { Start-Sleep 6; $why = (Q "select string_agg(rr.status || ':' || coalesce(left(rr.error,90),''), ' | ') w from refund_requests rr where rr.order_id=$o7")[0].w; $bad += "order $o7 status=$($st.status) liveRefunds=$($st.live) requests=[$why]" }
     }
-    Check "S6b 10 cancel-vs-payment races: always cancelled + exactly one refund" ($bad.Count -eq 0) ($bad -join '; ')
+    Check "S6b 10 cancel-vs-payment races: always cancelled + exactly one refund" ($bad.Count -eq 0) (($bad -join '; ') + " outcomes: " + (($reasons.GetEnumerator() | % { "$($_.Name)=$($_.Value)" }) -join ' , '))
     Check "S6b stock back to 30 after all races, never negative" ((Stock $p7) -eq 30) "stock=$(Stock $p7)"
   } else { Check "S6 settlement path" $true "SKIPPED (migration 034 not present)" }
 
@@ -115,7 +116,7 @@ try {
   $wsec = [Environment]::GetEnvironmentVariable($WebhookSecretEnv)
   if ($WebhookUrl -and $wsec) {
     $p5 = New-Product 10; $o5 = New-Order $p5 2 "order_zz_s5_$stamp"
-    $body = (@{ event = "payment.captured"; payload = @{ payment = @{ entity = @{ id = "pay_zz_s5"; order_id = "order_zz_s5_$stamp" } } } } | ConvertTo-Json -Depth 6 -Compress)
+    $body = (@{ event = "payment.captured"; payload = @{ payment = @{ entity = @{ id = "pay_zz_s5"; order_id = "order_zz_s5_$stamp"; amount = [int]([decimal](Q "select total_amount t from orders where id=$o5")[0].t * 100); status = "captured" } } } } | ConvertTo-Json -Depth 6 -Compress)
     $hm = New-Object System.Security.Cryptography.HMACSHA256 (,[Text.Encoding]::UTF8.GetBytes($wsec))
     $sig = ($hm.ComputeHash([Text.Encoding]::UTF8.GetBytes($body)) | ForEach-Object { $_.ToString("x2") }) -join ""
     $tasks = 1..6 | ForEach-Object {
@@ -130,6 +131,7 @@ try {
   } else { Check "S5 webhook duplicates" $true "SKIPPED (pass -WebhookUrl and set `$env:$WebhookSecretEnv)" }
 }
 finally {
+  Q "delete from zz_mock_refunds where payment_id like '%zz_%$stamp%'" | Out-Null
   if ($orderIds.Count) {
     Q "delete from refund_requests where order_id in ($($orderIds -join ','))" | Out-Null
     Q "delete from payments where order_id in ($($orderIds -join ','))" | Out-Null

@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 if ($Ref -eq "vkcwfwgxelmamuydwrow") { throw "DEV only." }
 $pat = [Environment]::GetEnvironmentVariable("SUPABASE_ACCESS_TOKEN", "User")
 $mh = @{ Authorization = "Bearer $pat"; "User-Agent" = "Mozilla/5.0"; "Content-Type" = "application/json" }
-function Q([string]$sql) { Invoke-RestMethod -Method Post -Uri "https://api.supabase.com/v1/projects/$Ref/database/query" -Headers $mh -Body ([Text.Encoding]::UTF8.GetBytes((@{ query = $sql } | ConvertTo-Json -Depth 3))) }
+function Q([string]$sql) { try { Invoke-RestMethod -Method Post -Uri "https://api.supabase.com/v1/projects/$Ref/database/query" -Headers $mh -Body ([Text.Encoding]::UTF8.GetBytes((@{ query = $sql } | ConvertTo-Json -Depth 3))) } catch { throw ("SQL error: " + (($_.ErrorDetails.Message -replace '(sbp_|eyJ)[A-Za-z0-9._-]+','<redacted>') -replace '\s+',' ')) } }
 $anon = ((Invoke-RestMethod -Uri "https://api.supabase.com/v1/projects/$Ref/api-keys" -Headers $mh) | ? { $_.name -eq "anon" -or $_.type -eq "publishable" } | select -First 1).api_key
 $rest = "https://$Ref.supabase.co/rest/v1"
 

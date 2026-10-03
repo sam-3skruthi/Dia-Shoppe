@@ -46,7 +46,7 @@ foreach ($f in Get-ChildItem "$sb\migrations\*.sql" | Sort-Object Name) {
 }
 
 # 4. mock-Razorpay ledger (DEV only)
-Q "create table if not exists public.zz_mock_refunds(payment_id text primary key, amount bigint, refund_id text, at timestamptz default now()); alter table public.zz_mock_refunds enable row level security; grant all on public.zz_mock_refunds to service_role" | Out-Null
+Q "create table if not exists public.zz_mock_refunds(payment_id text primary key, amount bigint, refund_id text, rr_id text, at timestamptz default now()); alter table public.zz_mock_refunds add column if not exists rr_id text; alter table public.zz_mock_refunds enable row level security; grant all on public.zz_mock_refunds to service_role" | Out-Null
 
 # 5. inert fixture rows (no passwords: these users cannot sign in)
 foreach ($u in @(@("dev-customer@example.test", "Dev", "Customer", "9000000001"), @("dev-admin@example.test", "Dev", "Admin", "9000000002"))) {
@@ -79,7 +79,7 @@ foreach ($r in $hooks) {
   switch ($r.name) { "hook_whatsapp_notify" { $kv["WHATSAPP_HOOK_SECRET"] = $r.s } "hook_order_email" { $kv["ORDER_EMAIL_HOOK_SECRET"] = $r.s } "hook_process_refund" { $kv["REFUND_HOOK_SECRET"] = $r.s } }
 }
 $setArgs = @(); foreach ($k in $kv.Keys) { $setArgs += "$k=$($kv[$k])" }
-$o = & $cli secrets set @setArgs --project-ref $Ref 2>&1 | Out-String
+$ErrorActionPreference = "Continue"; $o = & $cli secrets set @setArgs --project-ref $Ref 2>&1 | Out-String
 if ($LASTEXITCODE -ne 0) { throw "secrets set FAILED: $(Safe $o)" }
 "6. secrets set (names): $($kv.Keys -join ', ')"
 "   NOT set on purpose: WHATSAPP_TOKEN, WHATSAPP_PHONE_ID, RESEND_API_KEY, ANTHROPIC_API_KEY, META_PAGE_TOKEN, POSTHOG_*"
@@ -91,7 +91,7 @@ Copy-Item "$sb\dev-only\razorpay-mock\index.ts" "$mock\index.ts" -Force
 try {
   $names = (Get-ChildItem "$sb\functions" -Directory | % { $_.Name })
   Push-Location (Split-Path $sb -Parent)
-  $o = & $cli functions deploy @names --project-ref $Ref --use-api --no-verify-jwt 2>&1 | Out-String
+  $ErrorActionPreference = "Continue"; $o = & $cli functions deploy @names --project-ref $Ref --use-api --no-verify-jwt 2>&1 | Out-String
   if ($LASTEXITCODE -ne 0) { Pop-Location; throw "functions deploy FAILED: $(Safe $o)" }
   Pop-Location
 } finally { Remove-Item $mock -Recurse -Force }

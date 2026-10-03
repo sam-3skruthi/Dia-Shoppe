@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     // atomic claim: only an 'approved' request can start, and only once
     const { data: claimed } = await supabase
       .from("refund_requests")
-      .update({ status: "processing" })
+      .update({ status: "processing", processing_since: new Date().toISOString() })
       .eq("id", refund_request_id)
       .eq("status", "approved")
       .select("id, payment_id, order_id, amount, attempts")
@@ -66,6 +66,28 @@ Deno.serve(async (req) => {
     }
 
     const auth = btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
+
+    // Crash recovery: a previous attempt may already have reached Razorpay but died before
+    // saving the result. Ask Razorpay first; if a refund tagged with this request id exists,
+    // just record it - never create a second one.
+    try {
+      const lr = await fetch(`${RAZORPAY_API_BASE}/v1/payments/${payment.razorpay_payment_id}/refunds`, {
+        headers: { Authorization: `Basic ${auth}` },
+      });
+      if (lr.ok) {
+        const list = await lr.json();
+        const existing = (list.items ?? []).find((x: any) => String(x?.notes?.refund_request_id) === String(claimed.id));
+        if (existing) {
+          await supabase.from("refund_requests").update({
+            status: "processed", razorpay_refund_id: existing.id, error: null, processed_at: new Date().toISOString(),
+          }).eq("id", claimed.id);
+          await supabase.from("payments").update({ status: "refunded" }).eq("id", payment.id);
+          return json({ refunded: true, reconciled: true, refund_id: existing.id });
+        }
+      }
+      // a failed lookup is not fatal: fall through to the idempotency-keyed create below
+    } catch (_e) { /* fall through */ }
+
     let res: Response, body: any;
     try {
       res = await fetch(`${RAZORPAY_API_BASE}/v1/payments/${payment.razorpay_payment_id}/refund`, {

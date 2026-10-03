@@ -27,9 +27,18 @@ Deno.serve(async (req) => {
     if (id.includes("failrefund")) return json({ error: { description: "mock: refund rejected by bank" } }, 400);
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const refundId = `rfnd_mock_${id.slice(-12).replace(/\W/g, "")}`;
-    const { error } = await supabase.from("zz_mock_refunds").insert({ payment_id: id, amount: body.amount, refund_id: refundId });
+    const { error } = await supabase.from("zz_mock_refunds").insert({ payment_id: id, amount: body.amount, refund_id: refundId, rr_id: String(body.notes?.refund_request_id ?? "") });
     if (error) return json({ error: { description: "The payment has been fully refunded already" } }, 400);
     return json({ id: refundId, payment_id: id, amount: body.amount, status: "processed" });
+  }
+
+  m = path.match(/^\/v1\/payments\/([^/]+)\/refunds$/);
+  if (m && req.method === "GET") {
+    const id = decodeURIComponent(m[1]);
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data } = await supabase.from("zz_mock_refunds").select("refund_id, amount, rr_id").eq("payment_id", id);
+    return json({ entity: "collection", count: data?.length ?? 0,
+      items: (data ?? []).map((r: any) => ({ id: r.refund_id, amount: r.amount, status: "processed", notes: { refund_request_id: r.rr_id } })) });
   }
 
   m = path.match(/^\/v1\/payments\/([^/]+)$/);

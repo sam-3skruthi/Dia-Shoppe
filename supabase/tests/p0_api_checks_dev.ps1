@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 if ($Ref -eq "vkcwfwgxelmamuydwrow") { throw "DEV only." }
 $token = [Environment]::GetEnvironmentVariable("SUPABASE_ACCESS_TOKEN", "User")
 $h = @{ Authorization = "Bearer $token"; "User-Agent" = "Mozilla/5.0"; "Content-Type" = "application/json" }
-function Q([string]$sql) { Invoke-RestMethod -Method Post -Uri "https://api.supabase.com/v1/projects/$Ref/database/query" -Headers $h -Body ([Text.Encoding]::UTF8.GetBytes((@{ query = $sql } | ConvertTo-Json -Depth 3))) }
+function Q([string]$sql) { try { Invoke-RestMethod -Method Post -Uri "https://api.supabase.com/v1/projects/$Ref/database/query" -Headers $h -Body ([Text.Encoding]::UTF8.GetBytes((@{ query = $sql } | ConvertTo-Json -Depth 3))) } catch { throw ("SQL error: " + (($_.ErrorDetails.Message -replace '(sbp_|eyJ)[A-Za-z0-9._-]+','<redacted>') -replace '\s+',' ')) } }
 $fn = "https://$Ref.supabase.co/functions/v1"; $rest = "https://$Ref.supabase.co/rest/v1"
 $results = @(); function Check($n, [bool]$ok, $d = "") { $script:results += [pscustomobject]@{ Test = $n; Result = $(if ($ok) { "PASS" } else { "FAIL" }); Detail = $d } }
 function Code([scriptblock]$b) { try { (& $b).StatusCode } catch { [int]$_.Exception.Response.StatusCode } }
@@ -44,7 +44,7 @@ $pj = Invoke-RestMethod -Uri "$rest/products?select=*,categories(slug)&sku=eq.ZZ
 Check "C1 storefront query (select=*) works for anon" ($pj.Count -eq 1)
 Check "C2 anon sees NO cost_price value" ($null -eq $pj[0].cost_price)
 Check "C3 anon cannot read product_costs" ((Code { Invoke-WebRequest -Uri "$rest/product_costs?select=*" -Headers $ah -UseBasicParsing }) -eq 401 -or (Code { Invoke-WebRequest -Uri "$rest/product_costs?select=*" -Headers $ah -UseBasicParsing }) -eq 403)
-Check "C4 cost stored privately (admin-only table)" ([decimal](Q "select cost_price c from product_costs pc join products p on p.id=pc.product_id where p.sku='ZZ-API'")[0].c -eq 77.5)
+Check "C4 cost stored privately (admin-only table)" ([decimal](Q "select pc.cost_price c from product_costs pc join products p on p.id=pc.product_id where p.sku='ZZ-API'")[0].c -eq 77.5)
 Check "C5 anon cannot call settle_payment / confirm_online_payment" ((Code { Invoke-WebRequest -Method Post -Uri "$rest/rpc/settle_payment" -Headers $ah -ContentType "application/json" -Body '{"p_payment_id":"x","p_rzp_order_id":"y","p_amount_paise":1,"p_source":"t"}' -UseBasicParsing }) -in 401, 403)
 Check "C6 anon cannot read payments / refund_requests / financial_audit" ((@("payments", "refund_requests", "financial_audit") | ? { (Code { Invoke-WebRequest -Uri "$rest/${_}?select=*" -Headers $ah -UseBasicParsing }) -notin 401, 403 }).Count -eq 0)
 Q "delete from products where sku='ZZ-API'" | Out-Null
