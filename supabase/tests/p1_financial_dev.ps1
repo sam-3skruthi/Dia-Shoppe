@@ -76,6 +76,8 @@ try {
   Check "E3 order stays cancelled, payment recorded on it" ($row.status -eq "cancelled" -and $row.payment_id -eq $p3)
   Check "E3 full amount refunded" ([decimal](Q "select amount a from refund_requests where order_id=$($o.Id)")[0].a -eq $o.Total)
   Check "E3 stock untouched (50)" ((Stock) -eq 50)
+  $chain = (Q "select string_agg(action, ' > ' order by id) c from financial_audit where detail->>'order_id' = '$($o.Id)'")[0].c
+  Check "E3 audit chain complete and ordered" ($chain -eq "payment_captured > payment_recorded > refund_requested > refund_approved > refund_submitted > refund_processed") $chain
   Post-Webhook $o $p3 ([long]($o.Total * 100)) | Out-Null; Start-Sleep 3
   Check "E3 replay of the late event -> still ONE refund" ([int](Q "select count(*) c from refund_requests where order_id=$($o.Id)")[0].c -eq 1 -and (Mock-Refunds "%$($o.Rzp)") -eq 1)
 
@@ -102,14 +104,18 @@ try {
   Post-Webhook $o $p6 ([long]($o.Total * 100)) | Out-Null; Start-Sleep 2
   Q "update orders set status='shipped' where id=$($o.Id)" | Out-Null
   $stockBefore = Stock
-  Invoke-WebRequest -Method Post -Uri "$fn/courier-webhook" -Headers @{ "x-api-key" = $courierTok; "Content-Type" = "application/json" } -Body (@{ order_id = "$($o.Id)"; current_status = "RTO Delivered"; awb = "AWB$stamp" } | ConvertTo-Json) -UseBasicParsing | Out-Null
-  Start-Sleep 3
+  $courier = { param($st) Invoke-WebRequest -Method Post -Uri "$fn/courier-webhook" -Headers @{ "x-api-key" = $courierTok; "Content-Type" = "application/json" } -Body (@{ order_id = "$($o.Id)"; current_status = $st; awb = "AWB$stamp" } | ConvertTo-Json) -UseBasicParsing | Out-Null }
+  & $courier "RTO Initiated"; & $courier "RTO In Transit"; Start-Sleep 3
+  Check "E6 RTO *started*: status unchanged, stock NOT restored, no refund request" ((Q "select status s from orders where id=$($o.Id)")[0].s -eq "shipped" -and (Stock) -eq $stockBefore -and [int](Q "select count(*) c from refund_requests where order_id=$($o.Id)")[0].c -eq 0)
+  & $courier "RTO_Delivered"; Start-Sleep 3
   Check "E6 courier RTO -> order status 'rto' (not cancelled)" ((Q "select status s from orders where id=$($o.Id)")[0].s -eq "rto")
   Check "E6 RTO stock restored" ((Stock) -eq $stockBefore + 1) "stock=$(Stock) before=$stockBefore"
   Check "E6 refund waits for admin (requested), not executed" ((Q "select status s from refund_requests where order_id=$($o.Id)")[0].s -eq "requested" -and (Mock-Refunds "%$($o.Rzp)") -eq 0)
   $rid = (Q "select id from refund_requests where order_id=$($o.Id)")[0].id
   As-Admin "perform public.approve_refund($rid);"
   Check "E6 after admin approval the refund is PROCESSED" (Wait-Refund $o.Id "processed")
+  $chain6 = (Q "select string_agg(action, ' > ' order by id) c from financial_audit where detail->>'order_id' = '$($o.Id)'")[0].c
+  Check "E6 audit chain complete (requested by system, approved by an admin)" ($chain6 -eq "payment_captured > payment_recorded > refund_requested > refund_approved > refund_submitted > refund_processed") $chain6
   Check "E6 approver + actions audited" ([int](Q "select count(*) c from financial_audit where entity='refund_request' and entity_id=$rid and actor is not null")[0].c -ge 1)
 
   # E7 amount mismatch -> order not confirmed, admin review

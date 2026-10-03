@@ -35,7 +35,7 @@ function Parallel-Q([string[]]$sqls) {  # fire all, then collect
 
 $results = @()
 function Check([string]$name, [bool]$ok, [string]$detail) {
-  $script:results += [pscustomobject]@{ Test = $name; Result = $(if ($ok) { "PASS" } else { "FAIL" }); Detail = $detail }
+  $script:results += [pscustomobject]@{ Test = $name; Result = $(if ($detail -like "SKIPPED*") { "SKIP" } elseif ($ok) { "PASS" } else { "FAIL" }); Detail = $detail }
 }
 
 $uid = (Q "select id from user_profiles where role='customer' limit 1")[0].id
@@ -88,6 +88,29 @@ try {
   Parallel-Q (1..6 | ForEach-Object { "update orders set status='cancelled' where id=$o and status<>'cancelled'" }) | Out-Null
   Check "S4 parallel cancels restore once (7+3=10)" ((Stock $p) -eq 10) "stock=$(Stock $p)"
 
+  # ---- S6 (needs migration 034): the REAL settlement path under contention
+  if ([int](Q "select count(*) c from pg_proc where proname='settle_payment'")[0].c -gt 0) {
+    # S6a: 8 simultaneous deliveries of the same captured payment
+    $p6 = New-Product 20; $o6 = New-Order $p6 2 "order_zz_s6a_$stamp"; $amt = [int]([decimal](Q "select total_amount t from orders where id=$o6")[0].t * 100)
+    $rs = Parallel-Q (1..8 | ForEach-Object { "select public.settle_payment('pay_zz_s6a','order_zz_s6a_$stamp',$amt,'test') as r" })
+    $kinds = @($rs | ForEach-Object { $_[0].r.result })
+    Check "S6a exactly one 'confirmed', seven 'duplicate_event'" ((@($kinds | ? { $_ -eq 'confirmed' }).Count -eq 1) -and (@($kinds | ? { $_ -eq 'duplicate_event' }).Count -eq 7)) ($kinds -join ',')
+    Check "S6a one ledger row, stock taken once (20-2=18)" (([int](Q "select count(*) c from payments where razorpay_payment_id='pay_zz_s6a'")[0].c -eq 1) -and ((Stock $p6) -eq 18)) "stock=$(Stock $p6)"
+
+    # S6b: customer cancel RACES the payment, 10 orders. Whatever interleaving wins, the invariants must hold:
+    #   order cancelled, exactly ONE live refund for the payment, stock back to the starting level, no negative stock.
+    $p7 = New-Product 30; $bad = @()
+    1..10 | ForEach-Object {
+      $o7 = New-Order $p7 1 "order_zz_s6b_${stamp}_$_"; $amt7 = [int]([decimal](Q "select total_amount t from orders where id=$o7")[0].t * 100)
+      Parallel-Q @("update orders set status='cancelled', cancelled_by='customer' where id=$o7",
+                   "select public.settle_payment('pay_zz_s6b_$_','order_zz_s6b_${stamp}_$_',$amt7,'test') as r") | Out-Null
+      $st = (Q "select o.status, (select count(*) from refund_requests rr join payments p on p.id=rr.payment_id where p.order_id=o.id and rr.status in ('requested','approved','processing','processed')) live from orders o where o.id=$o7")[0]
+      if ($st.status -ne 'cancelled' -or [int]$st.live -ne 1) { $bad += "order $o7 status=$($st.status) liveRefunds=$($st.live)" }
+    }
+    Check "S6b 10 cancel-vs-payment races: always cancelled + exactly one refund" ($bad.Count -eq 0) ($bad -join '; ')
+    Check "S6b stock back to 30 after all races, never negative" ((Stock $p7) -eq 30) "stock=$(Stock $p7)"
+  } else { Check "S6 settlement path" $true "SKIPPED (migration 034 not present)" }
+
   # ---- S5 (optional): signed duplicate Razorpay webhooks through the real function
   $wsec = [Environment]::GetEnvironmentVariable($WebhookSecretEnv)
   if ($WebhookUrl -and $wsec) {
@@ -107,7 +130,10 @@ try {
   } else { Check "S5 webhook duplicates" $true "SKIPPED (pass -WebhookUrl and set `$env:$WebhookSecretEnv)" }
 }
 finally {
-  if ($orderIds.Count) { Q "delete from orders where id in ($($orderIds -join ','))" | Out-Null }
+  if ($orderIds.Count) {
+    Q "delete from refund_requests where order_id in ($($orderIds -join ','))" | Out-Null
+    Q "delete from payments where order_id in ($($orderIds -join ','))" | Out-Null
+    Q "delete from orders where id in ($($orderIds -join ','))" | Out-Null }
   if ($prodIds.Count)  { Q "delete from products where id in ($($prodIds -join ','))" | Out-Null }
 }
 $results | Format-Table -AutoSize -Wrap

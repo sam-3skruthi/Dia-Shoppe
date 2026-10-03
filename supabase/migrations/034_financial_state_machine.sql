@@ -98,10 +98,15 @@ CREATE OR REPLACE FUNCTION public.audit_payment()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 BEGIN
+  -- 1) what Razorpay told us (the capture event), 2) that we stored it in the ledger
+  INSERT INTO public.financial_audit(actor, action, entity, entity_id, detail)
+  VALUES (auth.uid(), 'payment_captured', 'payment', NEW.id,
+          jsonb_build_object('razorpay_payment_id', NEW.razorpay_payment_id, 'order_id', NEW.order_id,
+                             'amount', NEW.amount, 'source', NEW.source));
   INSERT INTO public.financial_audit(actor, action, entity, entity_id, detail)
   VALUES (auth.uid(), 'payment_recorded', 'payment', NEW.id,
           jsonb_build_object('razorpay_payment_id', NEW.razorpay_payment_id, 'order_id', NEW.order_id,
-                             'amount', NEW.amount, 'source', NEW.source));
+                             'amount', NEW.amount, 'ledger_status', NEW.status));
   RETURN NEW;
 END $$;
 DROP TRIGGER IF EXISTS trg_audit_payment ON public.payments;
@@ -114,7 +119,7 @@ AS $$
 BEGIN
   IF TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM NEW.status THEN
     INSERT INTO public.financial_audit(actor, action, entity, entity_id, detail)
-    VALUES (auth.uid(), 'refund_' || NEW.status, 'refund_request', NEW.id,
+    VALUES (auth.uid(), 'refund_' || CASE NEW.status WHEN 'processing' THEN 'submitted' ELSE NEW.status END, 'refund_request', NEW.id,
             jsonb_build_object('order_id', NEW.order_id, 'payment_id', NEW.payment_id, 'amount', NEW.amount,
                                'reason', NEW.reason, 'from', CASE WHEN TG_OP = 'UPDATE' THEN OLD.status END,
                                'error', NEW.error, 'razorpay_refund_id', NEW.razorpay_refund_id));
@@ -175,6 +180,26 @@ CREATE TRIGGER trg_dispatch_refund AFTER INSERT OR UPDATE OF status ON public.re
   FOR EACH ROW WHEN (NEW.status = 'approved')
   EXECUTE FUNCTION public.dispatch_refund_request();
 
+-- Every refund is first REQUESTED, then (by policy or by an admin) APPROVED, so the
+-- audit trail always shows the full chain. Policy-approved ones are stamped as such.
+CREATE OR REPLACE FUNCTION private.open_refund(
+  p_payment BIGINT, p_order BIGINT, p_amount NUMERIC, p_reason TEXT, p_needs_approval BOOLEAN)
+RETURNS BIGINT LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE v_id BIGINT;
+BEGIN
+  INSERT INTO public.refund_requests (payment_id, order_id, amount, reason, status, requires_approval)
+  VALUES (p_payment, p_order, p_amount, p_reason, 'requested', p_needs_approval)
+  RETURNING id INTO v_id;
+  IF NOT p_needs_approval THEN
+    UPDATE public.refund_requests
+       SET status = 'approved', approved_at = now(), decision_note = 'auto-approved by policy: ' || p_reason
+     WHERE id = v_id;
+  END IF;
+  RETURN v_id;
+END $$;
+REVOKE ALL ON FUNCTION private.open_refund(BIGINT, BIGINT, NUMERIC, TEXT, BOOLEAN) FROM PUBLIC, anon, authenticated;
+
 -- Cancelled / RTO order that holds captured money -> create the refund request.
 CREATE OR REPLACE FUNCTION public.create_refund_on_cancel()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
@@ -193,8 +218,7 @@ BEGIN
        AND NOT EXISTS (SELECT 1 FROM public.refund_requests rr
                         WHERE rr.payment_id = p.id AND rr.status IN ('requested', 'approved', 'processing', 'processed'))
   LOOP
-    INSERT INTO public.refund_requests (payment_id, order_id, amount, reason, status, requires_approval)
-    VALUES (r.id, NEW.id, r.amount, v_reason, CASE WHEN v_needs THEN 'requested' ELSE 'approved' END, v_needs);
+    PERFORM private.open_refund(r.id, NEW.id, r.amount, v_reason, v_needs);
   END LOOP;
   RETURN NEW;
 END $$;
@@ -262,17 +286,13 @@ BEGIN
   -- customer cancelled (or the order expired / was returned) before the money arrived
   IF v_order.status IN ('cancelled', 'rto') THEN
     UPDATE public.orders SET payment_id = COALESCE(payment_id, p_payment_id) WHERE id = v_order.id;
-    INSERT INTO public.refund_requests (payment_id, order_id, amount, reason, status, requires_approval)
-    VALUES (v_pay, v_order.id, v_amount, 'late_payment_after_cancel', 'approved', false)
-    RETURNING id INTO v_req;
+    v_req := private.open_refund(v_pay, v_order.id, v_amount, 'late_payment_after_cancel', false);
     RETURN jsonb_build_object('result', 'late_payment_refund', 'order_status', v_order.status, 'refund_request_id', v_req);
   END IF;
 
   -- captured amount differs from what the order costs: do not confirm, ask an admin
   IF v_amount <> v_order.total_amount THEN
-    INSERT INTO public.refund_requests (payment_id, order_id, amount, reason, status, requires_approval)
-    VALUES (v_pay, v_order.id, v_amount, 'amount_mismatch', 'requested', true)
-    RETURNING id INTO v_req;
+    v_req := private.open_refund(v_pay, v_order.id, v_amount, 'amount_mismatch', true);
     RETURN jsonb_build_object('result', 'amount_mismatch', 'order_status', v_order.status, 'refund_request_id', v_req);
   END IF;
 
@@ -286,9 +306,7 @@ BEGIN
   END IF;
 
   -- order already paid by a different payment: customer paid twice
-  INSERT INTO public.refund_requests (payment_id, order_id, amount, reason, status, requires_approval)
-  VALUES (v_pay, v_order.id, v_amount, 'duplicate_payment', 'approved', false)
-  RETURNING id INTO v_req;
+  v_req := private.open_refund(v_pay, v_order.id, v_amount, 'duplicate_payment', false);
   RETURN jsonb_build_object('result', 'duplicate_payment_refund', 'order_status', v_order.status, 'refund_request_id', v_req);
 END $$;
 REVOKE ALL ON FUNCTION public.settle_payment(TEXT, TEXT, BIGINT, TEXT, JSONB) FROM PUBLIC, anon, authenticated;

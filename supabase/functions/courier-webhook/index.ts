@@ -28,8 +28,10 @@ const STATUS_MAP: Record<string, string> = {
   "pickup generated": "shipped",
   "picked up": "shipped",
   "delivered": "delivered",
-  // returned to origin: NOT a cancellation and NOT an automatic refund.
-  // The order is marked rto, stock is restored, and an admin reviews the refund.
+  // Only the DEFINITIVE return state maps to 'rto': the parcel is back with the seller.
+  // "RTO initiated" / "RTO in transit" are deliberately NOT mapped (logged as courier_status only),
+  // so stock is not restored and no refund request exists until the item is really back.
+  // At 'rto': stock is restored once and an admin must approve any refund (never automatic).
   "rto delivered": "rto",
   "cancelled": "cancelled",
   "canceled": "cancelled",
@@ -94,7 +96,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const mapped = STATUS_MAP[rawStatus.trim().toLowerCase()];
+    // normalise "RTO_Delivered" / "rto-delivered" / "RTO  Delivered" to one spelling
+    const mapped = STATUS_MAP[rawStatus.trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ")];
 
     const patch: Record<string, unknown> = {
       courier_status: rawStatus,
