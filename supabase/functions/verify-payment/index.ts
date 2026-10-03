@@ -177,20 +177,31 @@ serve(async (req) => {
     });
     if (settleError) throw settleError;
 
-    const refunded = ["late_payment_refund", "duplicate_payment_refund", "amount_mismatch"].includes(result?.result) ||
-      (result?.result === "duplicate_event" && ["cancelled", "rto"].includes(result?.order_status));
-    if (refunded) {
-      // never tell the customer "paid" for an order that is not going ahead
-      const code = result.result === "amount_mismatch" ? "AMOUNT_MISMATCH_UNDER_REVIEW" : "ORDER_CANCELLED_REFUND_INITIATED";
-      return new Response(JSON.stringify({ success: false, code, error: "This order was cancelled before your payment arrived. A full refund has been started." }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // What the browser may be told. "success: true" is returned ONLY when the order
+    // is actually paid and going ahead; every other outcome is success:false with a
+    // machine-readable code, so a late/expired/mismatched payment can never be shown
+    // to the customer as a successful payment.
+    const PAID = ["confirmed", "paid", "shipped", "delivered"];
+    const r = result?.result;
+    const json = (body: Record<string, unknown>) =>
+      new Response(JSON.stringify(body), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    if (r === "late_payment_refund" || (r === "duplicate_event" && ["cancelled", "rto"].includes(result?.order_status))) {
+      return json({ success: false, code: "ORDER_CANCELLED_REFUND_INITIATED",
+        error: "This order was cancelled before your payment arrived. A full refund has been started - it reaches your account in 5-7 working days." });
     }
-    if (result?.result !== "confirmed") {
-      return new Response(JSON.stringify({ success: true, alreadyProcessed: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (r === "amount_mismatch" || (r === "duplicate_event" && !PAID.includes(result?.order_status))) {
+      return json({ success: false, code: "PAYMENT_UNDER_REVIEW",
+        error: "We received a payment that does not match this order. Your order is not confirmed yet; our team will review it and refund you if needed." });
     }
+    if (r === "orphan") {
+      return json({ success: false, code: "PAYMENT_UNDER_REVIEW", error: "We received your payment and are matching it to your order. Please contact us if you do not hear from us shortly." });
+    }
+    if (r === "duplicate_payment_refund") {
+      // the order itself IS paid (by an earlier payment); this extra payment is being refunded
+      return json({ success: true, alreadyProcessed: true, code: "DUPLICATE_PAYMENT_REFUND_INITIATED" });
+    }
+    if (r === "duplicate_event") return json({ success: true, alreadyProcessed: true });
 
     // The confirmation email is sent by the order-email function, which fires
     // from a DB trigger on 'confirmed' — so cash-on-delivery orders get one too.

@@ -68,7 +68,8 @@ foreach ($r in $hooks) {
   switch ($r.name) { "hook_whatsapp_notify" { $kv["WHATSAPP_HOOK_SECRET"] = $r.s } "hook_order_email" { $kv["ORDER_EMAIL_HOOK_SECRET"] = $r.s } "hook_process_refund" { $kv["REFUND_HOOK_SECRET"] = $r.s } }
 }
 $setArgs = @(); foreach ($k in $kv.Keys) { $setArgs += "$k=$($kv[$k])" }
-& $cli secrets set @setArgs --project-ref $Ref 2>&1 | Select-Object -Last 1
+$o = & $cli secrets set @setArgs --project-ref $Ref 2>&1 | Out-String
+if ($LASTEXITCODE -ne 0) { throw "secrets set FAILED: $($o.Substring(0, [Math]::Min(300, $o.Length)))" }
 "6. secrets set (names): $($kv.Keys -join ', ')"
 "   NOT set on purpose: WHATSAPP_TOKEN, WHATSAPP_PHONE_ID, RESEND_API_KEY, ANTHROPIC_API_KEY, META_PAGE_TOKEN, POSTHOG_*"
 
@@ -79,7 +80,8 @@ Copy-Item "$sb\dev-only\razorpay-mock\index.ts" "$mock\index.ts" -Force
 try {
   $names = (Get-ChildItem "$sb\functions" -Directory | % { $_.Name })
   Push-Location (Split-Path $sb -Parent)
-  & $cli functions deploy @names --project-ref $Ref --use-api --no-verify-jwt 2>&1 | Select-Object -Last 3
+  $o = & $cli functions deploy @names --project-ref $Ref --use-api --no-verify-jwt 2>&1 | Out-String
+  if ($LASTEXITCODE -ne 0) { Pop-Location; throw "functions deploy FAILED: $($o.Substring([Math]::Max(0, $o.Length - 400)))" }
   Pop-Location
 } finally { Remove-Item $mock -Recurse -Force }
 "7. deployed: $($names -join ', ')"
