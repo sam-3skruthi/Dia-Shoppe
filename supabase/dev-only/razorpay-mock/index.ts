@@ -26,6 +26,12 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     if (id.includes("failrefund")) return json({ error: { description: "mock: refund rejected by bank" } }, 400);
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    if (id.includes("flaky")) {                       // temporary outage: fails twice, then works
+      const { data: a } = await supabase.from("zz_mock_attempts").select("n").eq("payment_id", id).maybeSingle();
+      const n = (a?.n ?? 0) + 1;
+      await supabase.from("zz_mock_attempts").upsert({ payment_id: id, n });
+      if (n <= 2) return json({ error: { description: "mock: temporary gateway error" } }, 503);
+    }
     const refundId = `rfnd_mock_${id.slice(-12).replace(/\W/g, "")}`;
     const { error } = await supabase.from("zz_mock_refunds").insert({ payment_id: id, amount: body.amount, refund_id: refundId, rr_id: String(body.notes?.refund_request_id ?? "") });
     if (error) return json({ error: { description: "The payment has been fully refunded already" } }, 400);
@@ -48,6 +54,13 @@ Deno.serve(async (req) => {
     const parts = head.split("_");               // pay, status, amount, unique
     if (!orderId || parts.length < 3) return json({ error: { description: "mock: unknown payment" } }, 404);
     return json({ id, entity: "payment", status: parts[1], amount: Number(parts[2]), currency: "INR", order_id: orderId });
+  }
+
+  if (path === "/emails" && req.method === "POST") {          // stands in for Resend in DEV
+    const body = await req.json().catch(() => ({}));
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    await supabase.from("zz_mock_emails").insert({ to_address: String(body.to ?? ""), subject: String(body.subject ?? "") });
+    return json({ id: `email_mock_${crypto.randomUUID().slice(0, 8)}` });
   }
 
   if (path === "/v1/orders" && req.method === "POST") {

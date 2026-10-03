@@ -64,14 +64,26 @@ try {
   Check "S1 stock decremented once (10-3=7)" ((Stock $p) -eq 7) "stock=$(Stock $p)"
   Check "S1 final state confirmed + payment_id" ($row.status -eq 'confirmed' -and $row.payment_id -eq 'pay_zz_s1' -and $row.d -eq 3) "status=$($row.status) pay=$($row.payment_id) deducted=$($row.d)"
 
-  # ---- S2: oversell race - 10 different orders x1 unit, only 3 in stock, each confirmed twice in parallel
+  # ---- S2: oversell race - 10 orders x1 unit, only 3 in stock, each payment delivered twice at once
+  $strict = [int](Q "select count(*) c from pg_proc where proname='order_stock_shortages'")[0].c -gt 0
   $p2 = New-Product 3; $os = 1..10 | ForEach-Object { New-Order $p2 1 "order_zz_s2_${stamp}_$_" }
-  $sqls = @(); foreach ($x in $os) { 1..2 | ForEach-Object { $sqls += "select public.confirm_online_payment($x,'pay_zz_s2_$x') as r" } }
+  $sqls = @()
+  foreach ($x in $os) {
+    if ($strict) { $amt2 = [int]([decimal](Q "select total_amount t from orders where id=$x")[0].t * 100)
+      1..2 | ForEach-Object { $sqls += "select public.settle_payment('pay_zz_s2_${stamp}_$x','order_zz_s2_${stamp}_$($os.IndexOf($x) + 1)',$amt2,'test') as r" } }
+    else { 1..2 | ForEach-Object { $sqls += "select public.confirm_online_payment($x,'pay_zz_s2_$x') as r" } }
+  }
   Parallel-Q $sqls | Out-Null
-  $agg = (Q "select (select stock_qty from products where id=$p2) stock, (select coalesce(sum(stock_deducted_qty),0) from order_items where product_id=$p2) taken, (select count(*) from orders where id in ($($os -join ',')) and status='confirmed') confirmed")[0]
+  $agg = (Q "select (select stock_qty from products where id=$p2) stock, (select coalesce(sum(stock_deducted_qty),0) from order_items where product_id=$p2) taken, (select count(*) from orders where id in ($($os -join ',')) and status='confirmed') confirmed, (select count(*) from orders where id in ($($os -join ',')) and status='on_hold') held")[0]
   Check "S2 stock never negative" ([int]$agg.stock -ge 0) "stock=$($agg.stock)"
   Check "S2 exactly 3 units handed out (no oversell, no double-take)" ([int]$agg.taken -eq 3 -and [int]$agg.stock -eq 0) "taken=$($agg.taken) stock=$($agg.stock)"
-  Check "S2 all 10 paid orders confirmed (money was taken)" ([int]$agg.confirmed -eq 10) "confirmed=$($agg.confirmed)"
+  if ($strict) {
+    Check "S2b INVARIANT: exactly 3 orders confirmed, the other 7 ON HOLD (never confirmed short)" ([int]$agg.confirmed -eq 3 -and [int]$agg.held -eq 7) "confirmed=$($agg.confirmed) held=$($agg.held)"
+    $ev = (Q "select (select count(*) from refund_requests where order_id in ($($os -join ',')) and reason='insufficient_stock' and status='requested') r, (select count(*) from ops_events where code='insufficient_stock' and entity_id in ($($os -join ',')) and resolved_at is null) e, (select count(*) from payments where order_id in ($($os -join ','))) p")[0]
+    Check "S2b every held order: payment recorded + refund awaiting admin + ops alert, none duplicated" ([int]$ev.r -eq 7 -and [int]$ev.e -eq 7 -and [int]$ev.p -eq 10) "refunds=$($ev.r) alerts=$($ev.e) payments=$($ev.p)"
+  } else {
+    Check "S2 all 10 paid orders confirmed (legacy clamp behaviour, schema < 036)" ([int]$agg.confirmed -eq 10) "confirmed=$($agg.confirmed)"
+  }
 
   # ---- S3: forced overlap - A holds the lock 4s, B arrives at +1s and must WAIT, then lose
   $p3 = New-Product 10; $o3 = New-Order $p3 2 "order_zz_s3_$stamp"
@@ -133,6 +145,8 @@ try {
 finally {
   Q "delete from zz_mock_refunds where payment_id like '%zz_%$stamp%'" | Out-Null
   if ($orderIds.Count) {
+    Q "delete from customer_notifications where order_id in ($($orderIds -join ','))" | Out-Null
+    Q "delete from ops_events where (entity='order' and entity_id in ($($orderIds -join ','))) or (entity='refund_request' and entity_id in (select id from refund_requests where order_id in ($($orderIds -join ','))))" | Out-Null
     Q "delete from refund_requests where order_id in ($($orderIds -join ','))" | Out-Null
     Q "delete from payments where order_id in ($($orderIds -join ','))" | Out-Null
     Q "delete from orders where id in ($($orderIds -join ','))" | Out-Null }

@@ -49,16 +49,31 @@ BEGIN
   SELECT stock_qty INTO s FROM public.products WHERE id = v_prod;
   IF s <> 10 THEN RAISE EXCEPTION 'FAIL 3b: COD cancel should restore (got %)', s; END IF;
 
-  ---- 4. never below zero; restore returns only what was really taken
-  INSERT INTO public.orders (user_id, total_amount, status, payment_method, shipping_address, shipping_phone)
-    VALUES (v_user, 1, 'pending', 'online', 'x', '0') RETURNING id INTO v_o;
-  INSERT INTO public.order_items (order_id, product_id, quantity, price_at_purchase) VALUES (v_o, v_prod2, 3, 1);
-  PERFORM public.confirm_online_payment(v_o, 'pay_test_2');
-  SELECT stock_qty INTO s FROM public.products WHERE id = v_prod2;
-  IF s <> 0 THEN RAISE EXCEPTION 'FAIL 4a: stock must floor at 0 (got %)', s; END IF;
-  UPDATE public.orders SET status = 'cancelled' WHERE id = v_o;
-  SELECT stock_qty INTO s FROM public.products WHERE id = v_prod2;
-  IF s <> 1 THEN RAISE EXCEPTION 'FAIL 4b: restore must return only the 1 unit taken (got %)', s; END IF;
+  ---- 4. never below zero. Behaviour depends on the schema version:
+  ----    032 (production today): short stock is clamped to what exists and the restore returns only that
+  ----    036+ (strict invariant)  : an order line for more than exists is REFUSED outright
+  IF to_regprocedure('private.order_stock_shortages(bigint)') IS NULL THEN
+    INSERT INTO public.orders (user_id, total_amount, status, payment_method, shipping_address, shipping_phone)
+      VALUES (v_user, 1, 'pending', 'online', 'x', '0') RETURNING id INTO v_o;
+    INSERT INTO public.order_items (order_id, product_id, quantity, price_at_purchase) VALUES (v_o, v_prod2, 3, 1);
+    PERFORM public.confirm_online_payment(v_o, 'pay_test_2');
+    SELECT stock_qty INTO s FROM public.products WHERE id = v_prod2;
+    IF s <> 0 THEN RAISE EXCEPTION 'FAIL 4a: stock must floor at 0 (got %)', s; END IF;
+    UPDATE public.orders SET status = 'cancelled' WHERE id = v_o;
+    SELECT stock_qty INTO s FROM public.products WHERE id = v_prod2;
+    IF s <> 1 THEN RAISE EXCEPTION 'FAIL 4b: restore must return only the 1 unit taken (got %)', s; END IF;
+  ELSE
+    INSERT INTO public.orders (user_id, total_amount, status, payment_method, shipping_address, shipping_phone)
+      VALUES (v_user, 1, 'pending', 'online', 'x', '0') RETURNING id INTO v_o;
+    BEGIN
+      INSERT INTO public.order_items (order_id, product_id, quantity, price_at_purchase) VALUES (v_o, v_prod2, 3, 1);
+      RAISE EXCEPTION 'FAIL 4a: an order line for 3 units with 1 in stock was accepted';
+    EXCEPTION WHEN SQLSTATE 'P0001' THEN
+      IF SQLERRM NOT LIKE 'INSUFFICIENT_STOCK%' THEN RAISE; END IF;
+    END;
+    SELECT stock_qty INTO s FROM public.products WHERE id = v_prod2;
+    IF s <> 1 THEN RAISE EXCEPTION 'FAIL 4b: refused line must not touch stock (got %)', s; END IF;
+  END IF;
 
   ---- 5. client cannot pre-set the accounting flags
   INSERT INTO public.orders (user_id, total_amount, status, payment_method, shipping_address, shipping_phone)

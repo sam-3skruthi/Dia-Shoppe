@@ -194,6 +194,10 @@ serve(async (req) => {
       return json({ success: false, code: "PAYMENT_UNDER_REVIEW",
         error: "We received a payment that does not match this order. Your order is not confirmed yet; our team will review it and refund you if needed." });
     }
+    if (r === "held_insufficient_stock") {
+      return json({ success: false, code: "PAYMENT_HELD_OUT_OF_STOCK",
+        error: "Your payment was received, but an item in your order just went out of stock, so the order is on hold. Our team will contact you, or you can ask for a full refund." });
+    }
     if (r === "orphan") {
       return json({ success: false, code: "PAYMENT_UNDER_REVIEW", error: "We received your payment and are matching it to your order. Please contact us if you do not hear from us shortly." });
     }

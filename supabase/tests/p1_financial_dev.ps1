@@ -168,6 +168,9 @@ try {
 }
 finally {
   Q "delete from zz_mock_refunds where payment_id like '%order_zzf_$stamp%'" | Out-Null
+  Q "delete from zz_mock_attempts where payment_id like '%order_zzf_$stamp%'" | Out-Null
+  Q "delete from customer_notifications where order_id in (select id from orders where razorpay_order_id like 'order_zzf_$stamp%')" | Out-Null
+  Q "delete from ops_events where (entity='order' and entity_id in (select id from orders where razorpay_order_id like 'order_zzf_$stamp%')) or (entity='refund_request' and entity_id in (select rr.id from refund_requests rr join orders o on o.id=rr.order_id where o.razorpay_order_id like 'order_zzf_$stamp%'))" | Out-Null
   Q "delete from refund_requests where order_id in (select id from orders where razorpay_order_id like 'order_zzf_$stamp%')" | Out-Null
   Q "delete from payments where razorpay_order_id like 'order_zzf_$stamp%'" | Out-Null
   Q "delete from orders where razorpay_order_id like 'order_zzf_$stamp%'" | Out-Null

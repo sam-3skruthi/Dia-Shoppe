@@ -46,7 +46,7 @@ foreach ($f in Get-ChildItem "$sb\migrations\*.sql" | Sort-Object Name) {
 }
 
 # 4. mock-Razorpay ledger (DEV only)
-Q "create table if not exists public.zz_mock_refunds(payment_id text primary key, amount bigint, refund_id text, rr_id text, at timestamptz default now()); alter table public.zz_mock_refunds add column if not exists rr_id text; alter table public.zz_mock_refunds enable row level security; grant all on public.zz_mock_refunds to service_role" | Out-Null
+Q "create table if not exists public.zz_mock_refunds(payment_id text primary key, amount bigint, refund_id text, rr_id text, at timestamptz default now()); alter table public.zz_mock_refunds add column if not exists rr_id text; alter table public.zz_mock_refunds enable row level security; grant all on public.zz_mock_refunds to service_role; create table if not exists public.zz_mock_emails(id bigserial primary key, to_address text, subject text, at timestamptz default now()); alter table public.zz_mock_emails enable row level security; grant all on public.zz_mock_emails to service_role; create table if not exists public.zz_mock_attempts(payment_id text primary key, n int); alter table public.zz_mock_attempts enable row level security; grant all on public.zz_mock_attempts to service_role; grant usage on all sequences in schema public to service_role" | Out-Null
 
 # 5. inert fixture rows (no passwords: these users cannot sign in)
 foreach ($u in @(@("dev-customer@example.test", "Dev", "Customer", "9000000001"), @("dev-admin@example.test", "Dev", "Admin", "9000000002"))) {
@@ -74,15 +74,17 @@ $kv["SOCIAL_VERIFY_TOKEN"]     = EnsureVaultTest "dev_test_social_verify"
 $kv["RAZORPAY_KEY_ID"]         = "rzp_test_devmock"
 $kv["RAZORPAY_API_BASE"]       = "https://$Ref.supabase.co/functions/v1/razorpay-mock"
 $kv["ENVIRONMENT"]             = "dev"
-$hooks = Q "select name, decrypted_secret s from vault.decrypted_secrets where name in ('hook_whatsapp_notify','hook_order_email','hook_process_refund')"
+$kv["RESEND_API_BASE"]         = "https://$Ref.supabase.co/functions/v1/razorpay-mock"   # DEV mail never leaves the project
+$kv["RESEND_API_KEY"]          = "re_dev_mock_not_a_real_key"
+$hooks = Q "select name, decrypted_secret s from vault.decrypted_secrets where name in ('hook_whatsapp_notify','hook_order_email','hook_process_refund','hook_refund_notify')"
 foreach ($r in $hooks) {
-  switch ($r.name) { "hook_whatsapp_notify" { $kv["WHATSAPP_HOOK_SECRET"] = $r.s } "hook_order_email" { $kv["ORDER_EMAIL_HOOK_SECRET"] = $r.s } "hook_process_refund" { $kv["REFUND_HOOK_SECRET"] = $r.s } }
+  switch ($r.name) { "hook_whatsapp_notify" { $kv["WHATSAPP_HOOK_SECRET"] = $r.s } "hook_order_email" { $kv["ORDER_EMAIL_HOOK_SECRET"] = $r.s } "hook_process_refund" { $kv["REFUND_HOOK_SECRET"] = $r.s } "hook_refund_notify" { $kv["REFUND_NOTIFY_HOOK_SECRET"] = $r.s } }
 }
 $setArgs = @(); foreach ($k in $kv.Keys) { $setArgs += "$k=$($kv[$k])" }
 $ErrorActionPreference = "Continue"; $o = & $cli secrets set @setArgs --project-ref $Ref 2>&1 | Out-String
 if ($LASTEXITCODE -ne 0) { throw "secrets set FAILED: $(Safe $o)" }
 "6. secrets set (names): $($kv.Keys -join ', ')"
-"   NOT set on purpose: WHATSAPP_TOKEN, WHATSAPP_PHONE_ID, RESEND_API_KEY, ANTHROPIC_API_KEY, META_PAGE_TOKEN, POSTHOG_*"
+"   NOT set on purpose: WHATSAPP_TOKEN, WHATSAPP_PHONE_ID, ANTHROPIC_API_KEY (RESEND_API_KEY is a dummy pointing at the DEV mock), META_PAGE_TOKEN, POSTHOG_*"
 
 # 7. functions (+ the DEV-only mock, copied in only for the deploy)
 $mock = "$sb\functions\razorpay-mock"

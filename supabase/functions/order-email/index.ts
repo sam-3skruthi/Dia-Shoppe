@@ -17,6 +17,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 // delivers to the Resend account owner's own inbox.
 const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "Dia Shoppe <onboarding@resend.dev>";
 const HOOK_SECRET = Deno.env.get("ORDER_EMAIL_HOOK_SECRET");
+const RESEND_API_BASE = Deno.env.get("RESEND_API_BASE") || "https://api.resend.com";
 
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
@@ -102,7 +103,7 @@ Deno.serve(async (req) => {
       price: Number(i.price_at_purchase),
     }));
 
-    const resp = await fetch("https://api.resend.com/emails", {
+    const resp = await fetch(`${RESEND_API_BASE}/emails`, {
       method: "POST",
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
