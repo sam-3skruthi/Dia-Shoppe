@@ -8,7 +8,11 @@ $ErrorActionPreference = "Stop"
 if ($Ref -eq "vkcwfwgxelmamuydwrow") { throw "DEV only: refusing to touch PRODUCTION." }
 $token = [Environment]::GetEnvironmentVariable("SUPABASE_ACCESS_TOKEN", "User"); $env:SUPABASE_ACCESS_TOKEN = $token
 $cli = "$env:APPDATA\npm\supabase.cmd"
-function Plain($sec) { [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBGSTR($sec)) }
+# --- runtime compatibility check (Windows PowerShell 5.1+ / PowerShell 7): fail early, before any prompt ---
+function Get-PlainText([System.Security.SecureString]$s) { (New-Object System.Management.Automation.PSCredential('x', $s)).GetNetworkCredential().Password }
+if ($PSVersionTable.PSVersion.Major -lt 5) { throw "PowerShell 5.1 or newer is required (found $($PSVersionTable.PSVersion))." }
+if ((Get-PlainText (ConvertTo-SecureString 'compat-probe' -AsPlainText -Force)) -ne 'compat-probe') { throw "SecureString conversion is not working in this PowerShell." }
+function Plain($sec) { Get-PlainText $sec }
 $ErrorActionPreference = "Continue"
 if ($Mode -eq "real") {
   $keyId = Read-Host "Razorpay TEST key id (starts with rzp_test_)"

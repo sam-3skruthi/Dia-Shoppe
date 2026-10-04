@@ -1,13 +1,17 @@
 # REAL-LOGIN permission checks for the DEV project. YOU run this in your own terminal.
 #   ./p0_auth_checks_dev.ps1 -Ref lffnmycocbtpyvntccbg
 # Before running, sign up TWO accounts in the DEV app (or Supabase DEV dashboard > Authentication > Add user):
-#   - a CUSTOMER (any email)           - an ADMIN: use an email on the admin allow-list (migration 025)
+#   - a CUSTOMER (any email)           - an ADMIN (any email; the script offers to promote it in DEV)
 # The script asks for both emails + passwords with hidden input. Passwords are used only to call DEV's
 # /auth/v1/token and are never written anywhere. It creates throwaway fixtures with your access token
 # and removes them at the end. DEV only.
 param([Parameter(Mandatory = $true)][string]$Ref)
 $ErrorActionPreference = "Stop"
 if ($Ref -eq "vkcwfwgxelmamuydwrow") { throw "DEV only." }
+# --- runtime compatibility check (Windows PowerShell 5.1+ / PowerShell 7): fail early, before any prompt ---
+function Get-PlainText([System.Security.SecureString]$s) { (New-Object System.Management.Automation.PSCredential('x', $s)).GetNetworkCredential().Password }
+if ($PSVersionTable.PSVersion.Major -lt 5) { throw "PowerShell 5.1 or newer is required (found $($PSVersionTable.PSVersion))." }
+if ((Get-PlainText (ConvertTo-SecureString 'compat-probe' -AsPlainText -Force)) -ne 'compat-probe') { throw "SecureString conversion is not working in this PowerShell." }
 $pat = [Environment]::GetEnvironmentVariable("SUPABASE_ACCESS_TOKEN", "User")
 $mh = @{ Authorization = "Bearer $pat"; "User-Agent" = "Mozilla/5.0"; "Content-Type" = "application/json" }
 function Q([string]$sql) { try { Invoke-RestMethod -Method Post -Uri "https://api.supabase.com/v1/projects/$Ref/database/query" -Headers $mh -Body ([Text.Encoding]::UTF8.GetBytes((@{ query = $sql } | ConvertTo-Json -Depth 3))) } catch { throw ("SQL error: " + (($_.ErrorDetails.Message -replace '(sbp_|eyJ)[A-Za-z0-9._-]+','<redacted>') -replace '\s+',' ')) } }
@@ -16,8 +20,9 @@ $rest = "https://$Ref.supabase.co/rest/v1"
 
 function Login([string]$label) {
   $email = Read-Host "$label email"; $sec = Read-Host "$label password" -AsSecureString
-  $pw = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBGSTR($sec))
-  $r = Invoke-RestMethod -Method Post -Uri "https://$Ref.supabase.co/auth/v1/token?grant_type=password" -Headers @{ apikey = $anon; "Content-Type" = "application/json" } -Body (@{ email = $email; password = $pw } | ConvertTo-Json)
+  $pw = Get-PlainText $sec; $sec = $null
+  try { $r = Invoke-RestMethod -Method Post -Uri "https://$Ref.supabase.co/auth/v1/token?grant_type=password" -Headers @{ apikey = $anon; "Content-Type" = "application/json" } -Body (@{ email = $email; password = $pw } | ConvertTo-Json) }
+  catch { $pw = $null; throw "Sign-in failed for $label account $email (HTTP $([int]$_.Exception.Response.StatusCode)). Check the email/password and that the user is confirmed in DEV." }
   $pw = $null
   [pscustomobject]@{ Email = $email; Id = $r.user.id; Jwt = $r.access_token }
 }
