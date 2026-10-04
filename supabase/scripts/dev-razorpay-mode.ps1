@@ -58,10 +58,11 @@ if ($Mode -eq "check") {
 }
 
 if ($Mode -eq "real") {
-  $keyId = Read-Host "Razorpay TEST key id (starts with rzp_test_)"
+  $keyId = (Read-Host "Razorpay TEST key id (starts with rzp_test_)").Trim()
   if ($keyId -notmatch '^rzp_test_[A-Za-z0-9]+$') { throw "Refused: that is not a rzp_test_ key id. Live keys are never used in DEV." }
-  $keySecret = Plain (Read-Host "Razorpay TEST key secret" -AsSecureString)
-  $whSecret = Plain (Read-Host "Razorpay TEST webhook secret (the one you typed when creating the DEV webhook)" -AsSecureString)
+  $keySecret = (Plain (Read-Host "Razorpay TEST key secret" -AsSecureString)).Trim()
+  $whSecret = (Plain (Read-Host "Razorpay TEST webhook secret (the one you typed when creating the DEV webhook)" -AsSecureString)).Trim()
+  if ($whSecret -notmatch '^[A-Za-z0-9_-]{12,}$') { $keySecret = $null; $whSecret = $null; throw "Webhook secret must be 12+ letters/digits/_/- only: symbols such as & | ^ % are altered by the Windows command shim and would silently store a DIFFERENT secret." }
   $r = Invoke-Sb @("secrets", "set", "RAZORPAY_KEY_ID=$keyId", "RAZORPAY_KEY_SECRET=$keySecret", "RAZORPAY_WEBHOOK_SECRET=$whSecret", "RAZORPAY_API_BASE=https://api.razorpay.com", "--project-ref", $Ref)
   $keySecret = $null; $whSecret = $null
   if ($r.Code -ne 0) { Fail-Safe "secrets set" $r }

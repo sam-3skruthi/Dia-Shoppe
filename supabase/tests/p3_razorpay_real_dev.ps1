@@ -1,4 +1,4 @@
-﻿# REAL Razorpay TEST-mode verification against the deployed DEV functions. YOU run this in your own terminal.
+# REAL Razorpay TEST-mode verification against the deployed DEV functions. YOU run this in your own terminal.
 # RESUMABLE and NON-DESTRUCTIVE: progress is saved to a small state file (no secrets); a failure or crash NEVER deletes
 # test rows (they are the evidence). Rows are removed only after a fully green run, or with -Cleanup.
 #
@@ -100,10 +100,10 @@ function Remove-TestRows {
 if ($Cleanup) { Remove-TestRows; "Runner test rows and state file removed."; exit 0 }
 
 # ---------------- credentials (TEST only) ----------------
-$keyId = Read-Host "Razorpay TEST key id"
+$keyId = (Read-Host "Razorpay TEST key id").Trim()
 if ($keyId -notmatch '^rzp_test_[A-Za-z0-9]+$') { throw "Refused: not a rzp_test_ key." }
 $sec = Read-Host "Razorpay TEST key secret" -AsSecureString
-$ks = Get-PlainText $sec; $sec = $null
+$ks = (Get-PlainText $sec).Trim(); $sec = $null     # a stray space/newline from a paste would cause HTTP 401
 $rzH = @{ Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("${keyId}:$ks")); "Content-Type" = "application/json" }; $ks = $null
 function Rz([string]$method, [string]$path, $body = $null) {
   $ep = "$method $path"
