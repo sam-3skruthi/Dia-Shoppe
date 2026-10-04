@@ -10,7 +10,7 @@
 # Key id must be rzp_test_*; anything else is refused. Nothing is printed or stored except results.
 # The script opens a small local page with Razorpay Checkout; pay with the test card 4111 1111 1111 1111,
 # any future expiry, any CVV, and choose Success on the bank page. Three payments are needed.
-param([Parameter(Mandatory = $true)][string]$Ref)
+param([Parameter(Mandatory = $true)][string]$Ref, [switch]$NoLaunch)   # -NoLaunch: only print the URL (for tests)
 $ErrorActionPreference = "Stop"
 if ($Ref -eq "vkcwfwgxelmamuydwrow") { throw "DEV only." }
 # --- runtime compatibility check (Windows PowerShell 5.1+ / PowerShell 7): fail early, before any prompt ---
@@ -51,10 +51,76 @@ function New-Case([long]$paise) {
   [pscustomobject]@{ Id = $o; Rzp = $ro.Json.id; Paise = $paise }
 }
 function Pay-InBrowser($c) {
-  $html = "<!doctype html><meta charset=utf-8><title>DEV test payment</title><h3>Dia Shoppe DEV - Razorpay TEST payment</h3><p id=s>Opening checkout...</p><script src='https://checkout.razorpay.com/v1/checkout.js'></script><script>new Razorpay({key:'$keyId',order_id:'$($c.Rzp)',amount:$($c.Paise),currency:'INR',name:'Dia Shoppe DEV',description:'test',handler:function(r){document.getElementById('s').innerText='PAID '+r.razorpay_payment_id+' - you may close this tab';}}).open();</script>"
-  $f = Join-Path $env:TEMP "dev-rzp-pay-$($c.Id).html"; Set-Content -Path $f -Value $html -Encoding UTF8; Start-Process $f
-  Read-Host "Pay the checkout that just opened (test card 4111 1111 1111 1111, Success). Press Enter when it says PAID"
-  Remove-Item -LiteralPath $f -Force
+  # Serves ONE payment page for ONE already-created Razorpay TEST order on http://localhost (never file://),
+  # prints the URL, tries to open a browser, and waits for the page to report the payment id.
+  # No secret ever appears in the page, the URL or the output: only the public key id and the order id.
+  $token = [guid]::NewGuid().ToString("N")
+  $listener = $null; $port = $null
+  foreach ($p in 8765..8785) {
+    try { $l = New-Object System.Net.HttpListener; $l.Prefixes.Add("http://localhost:$p/"); $l.Start(); $listener = $l; $port = $p; break } catch { }
+  }
+  if (-not $listener) { throw "Could not start the local payment page (ports 8765-8785 are all busy or blocked). Close other tools using them and retry." }
+  $url = "http://localhost:$port/pay/$token"
+
+  $page = @'
+<!doctype html><meta charset="utf-8"><title>DEV test payment</title>
+<body style="font-family:sans-serif;max-width:560px;margin:40px auto">
+<h3>Dia Shoppe DEV - Razorpay TEST payment</h3>
+<p>Order <b>__ORDER__</b> - Rs __RUPEES__ (TEST mode, no real money). Test card <b>4111 1111 1111 1111</b>, any future expiry, any CVV, choose <b>Success</b>.</p>
+<p id="s">Opening checkout...</p><button id="b" onclick="go()">Open checkout again</button>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var paid = false;
+function go() {
+  if (paid) { document.getElementById('s').innerText = 'Already paid - nothing more to do. You may close this tab.'; return; }
+  new Razorpay({
+    key: '__KEY__', order_id: '__ORDER__', amount: __AMOUNT__, currency: 'INR', name: 'Dia Shoppe DEV', description: 'test',
+    handler: function (r) {
+      paid = true;
+      document.getElementById('s').innerText = 'PAID ' + r.razorpay_payment_id + ' - reporting back to the test runner...';
+      fetch('/done/__TOKEN__?pid=' + encodeURIComponent(r.razorpay_payment_id)).then(function () {
+        document.getElementById('s').innerText = 'PAID ' + r.razorpay_payment_id + ' - you may close this tab.';
+      });
+    },
+    modal: { ondismiss: function () { if (!paid) document.getElementById('s').innerText = 'Checkout closed without paying. Click "Open checkout again" (same order, no duplicate).'; } }
+  }).open();
+}
+window.onload = go;
+</script>
+'@
+  $page = $page.Replace("__KEY__", $keyId).Replace("__ORDER__", $c.Rzp).Replace("__AMOUNT__", [string]$c.Paise).Replace("__RUPEES__", ("{0:N2}" -f ($c.Paise / 100))).Replace("__TOKEN__", $token)
+
+  Write-Host ""
+  Write-Host "==> CHECKOUT URL (TEST mode): $url" -ForegroundColor Cyan
+  Write-Host "    Pay with test card 4111 1111 1111 1111, any future expiry, any CVV, then choose Success."
+  $opened = $false
+  if (-not $NoLaunch) {
+    foreach ($try in @({ Start-Process $url }, { Start-Process "cmd.exe" -ArgumentList "/c", "start", '""', $url -WindowStyle Hidden }, { Start-Process "explorer.exe" -ArgumentList $url })) {
+      try { & $try; $opened = $true; break } catch { }
+    }
+  }
+  if ($opened) { Write-Host "    A browser was asked to open it. If nothing appears within ~10 seconds, copy the URL above into any browser." }
+  else { Write-Host "    Could not launch a browser automatically: open the URL above manually." -ForegroundColor Yellow }
+  Write-Host "    Waiting for the payment to complete (up to 10 minutes; Ctrl+C aborts and cleans up)..."
+
+  $paidId = $null; $deadline = (Get-Date).AddMinutes(10)
+  try {
+    while (-not $paidId -and (Get-Date) -lt $deadline) {
+      $task = $listener.GetContextAsync()
+      while (-not $task.Wait(500)) { if ((Get-Date) -ge $deadline) { break } }
+      if (-not $task.IsCompleted) { break }
+      $ctx = $task.Result; $path = $ctx.Request.Url.AbsolutePath
+      $body = ""; $code = 200; $type = "text/html; charset=utf-8"
+      if ($path -eq "/pay/$token") { $body = $page }
+      elseif ($path -eq "/done/$token") { $q = $ctx.Request.QueryString["pid"]; if ($q -match '^pay_[A-Za-z0-9]+$') { $paidId = $q; $body = "ok"; $type = "text/plain" } else { $code = 400; $body = "bad payment id"; $type = "text/plain" } }
+      else { $code = 404; $body = "not found"; $type = "text/plain" }
+      $bytes = [Text.Encoding]::UTF8.GetBytes($body); $ctx.Response.StatusCode = $code; $ctx.Response.ContentType = $type
+      $ctx.Response.ContentLength64 = $bytes.Length; $ctx.Response.OutputStream.Write($bytes, 0, $bytes.Length); $ctx.Response.OutputStream.Close()
+    }
+  } finally { $listener.Stop(); $listener.Close() }
+  if (-not $paidId) { throw "No payment was reported within 10 minutes for order $($c.Rzp). Nothing else was created; re-run to try again." }
+  Write-Host "    Payment reported by the browser: $paidId" -ForegroundColor Green
+  $paidId
 }
 function Pay-Id($c) { (Q "select razorpay_payment_id p from payments where razorpay_order_id='$($c.Rzp)'")[0].p }
 
@@ -64,7 +130,7 @@ try {
   Check "R0 TEST credentials accepted by the real API" ($ping.Code -eq 200)
 
   # ---------- R1 normal payment: real captured payload -> ledger -> confirmed -> stock once
-  $c1 = New-Case 19900; Pay-InBrowser $c1
+  $c1 = New-Case 19900; $null = Pay-InBrowser $c1
   Check "R1 webhook confirmed the order" (Wait-For { (Q "select status s from orders where id=$($c1.Id)")[0].s -eq "confirmed" })
   $p1 = Pay-Id $c1
   $raw = (Q "select raw::text r from payments where razorpay_order_id='$($c1.Rzp)'")[0].r | ConvertFrom-Json
@@ -75,7 +141,7 @@ try {
   Check "R1 independent GET /payments/:id agrees (captured, 19900, same order)" ($api.Json.status -eq "captured" -and $api.Json.amount -eq 19900 -and $api.Json.order_id -eq $c1.Rzp)
 
   # ---------- R2 wrong amount: Razorpay order for Rs 150 while the DB order costs Rs 199
-  $c2 = New-Case 15000; Pay-InBrowser $c2
+  $c2 = New-Case 15000; $null = Pay-InBrowser $c2
   Check "R2 wrong amount: order NOT confirmed, refund waits for admin" (Wait-For { (Q "select status s from refund_requests where order_id=$($c2.Id)" | select -First 1).s -eq "requested" } 60)
   Check "R2 order still pending, nothing deducted" (((Q "select status s from orders where id=$($c2.Id)")[0].s -eq "pending") -and (Stock) -eq 19)
   $rr2 = (Q "select id from refund_requests where order_id=$($c2.Id)")[0].id
@@ -88,7 +154,7 @@ try {
   # ---------- R3 late payment after cancellation -> automatic full refund
   $c3 = New-Case 19900
   Q "update orders set status='cancelled', cancelled_by='customer' where id=$($c3.Id)" | Out-Null
-  Pay-InBrowser $c3
+  $null = Pay-InBrowser $c3
   Check "R3 late payment -> refund PROCESSED automatically" (Wait-For { (Q "select status s from refund_requests where order_id=$($c3.Id)" | select -First 1).s -eq "processed" } 90)
   $p3 = Pay-Id $c3; $rr3 = (Q "select id from refund_requests where order_id=$($c3.Id)")[0].id; $l3 = Rz Get "/v1/payments/$p3/refunds"
   Check "R3 order stays cancelled, stock untouched, full amount refunded" (((Q "select status s from orders where id=$($c3.Id)")[0].s -eq "cancelled") -and (Stock) -eq 19 -and $l3.Json.items[0].amount -eq 19900)
