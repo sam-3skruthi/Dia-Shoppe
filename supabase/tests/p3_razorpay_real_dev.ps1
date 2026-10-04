@@ -8,8 +8,10 @@
 #   3. ./supabase/tests/p3_razorpay_real_dev.ps1 -Ref lffnmycocbtpyvntccbg
 #   4. when finished: ./supabase/scripts/dev-razorpay-mode.ps1 -Ref lffnmycocbtpyvntccbg -Mode mock
 # Key id must be rzp_test_*; anything else is refused. Nothing is printed or stored except results.
-# The script opens a small local page with Razorpay Checkout; pay with the test card 4111 1111 1111 1111,
-# any future expiry, any CVV, and choose Success on the bank page. Three payments are needed.
+# The script opens a small local page with Razorpay Checkout. Use a DOMESTIC Indian test card (the generic 4111 card is
+# treated as international and rejected): Visa debit 4100 2800 0000 1007 (alt: RuPay 6527 6589 0000 1005), any future expiry,
+# any CVV; on the bank page enter any 4-10 digit OTP (e.g. 123456) = success. Or choose UPI and enter success@razorpay.
+# Source: Razorpay docs 'Test Card Details' and 'Test UPI Details'. Three payments are needed.
 param([Parameter(Mandatory = $true)][string]$Ref, [switch]$NoLaunch)   # -NoLaunch: only print the URL (for tests)
 $ErrorActionPreference = "Stop"
 if ($Ref -eq "vkcwfwgxelmamuydwrow") { throw "DEV only." }
@@ -66,7 +68,7 @@ function Pay-InBrowser($c) {
 <!doctype html><meta charset="utf-8"><title>DEV test payment</title>
 <body style="font-family:sans-serif;max-width:560px;margin:40px auto">
 <h3>Dia Shoppe DEV - Razorpay TEST payment</h3>
-<p>Order <b>__ORDER__</b> - Rs __RUPEES__ (TEST mode, no real money). Test card <b>4111 1111 1111 1111</b>, any future expiry, any CVV, choose <b>Success</b>.</p>
+<p>Order <b>__ORDER__</b> - Rs __RUPEES__ (TEST mode, no real money). Use Visa debit <b>4100 2800 0000 1007</b> (or RuPay <b>6527 6589 0000 1005</b>), any future expiry, any CVV; on the bank page enter any OTP of 4-10 digits (e.g. <b>123456</b>). Or choose UPI and enter <b>success@razorpay</b>. (The generic 4111 card is treated as international and is rejected.)</p>
 <p id="s">Opening checkout...</p><button id="b" onclick="go()">Open checkout again</button>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
@@ -92,7 +94,8 @@ window.onload = go;
 
   Write-Host ""
   Write-Host "==> CHECKOUT URL (TEST mode): $url" -ForegroundColor Cyan
-  Write-Host "    Pay with test card 4111 1111 1111 1111, any future expiry, any CVV, then choose Success."
+  Write-Host "    Pay with the DOMESTIC test card Visa debit 4100 2800 0000 1007 (or RuPay 6527 6589 0000 1005): any future expiry, any CVV,"
+  Write-Host "    then any 4-10 digit OTP (e.g. 123456) on the bank page. Alternative: choose UPI and enter success@razorpay."
   $opened = $false
   if (-not $NoLaunch) {
     foreach ($try in @({ Start-Process $url }, { Start-Process "cmd.exe" -ArgumentList "/c", "start", '""', $url -WindowStyle Hidden }, { Start-Process "explorer.exe" -ArgumentList $url })) {
