@@ -22,6 +22,8 @@ const META_PAGE_TOKEN = Deno.env.get("META_PAGE_TOKEN");
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  // DEFERRED FEATURE (P2): disabled until the social inbox is implemented (it also marks a message "replied" even when the Graph post failed)
+  if (Deno.env.get("SOCIAL_INBOX_ENABLED") !== "1") return new Response(JSON.stringify({ error: "social inbox is disabled" }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   try {
     // admin gate
