@@ -19,10 +19,12 @@ Nothing here has been run against production. Production facts below come from r
 | No `schema_migrations` table (migrations were applied by hand) | keep a manual rollout log of what was applied when |
 | Backups: none listed, PITR off | manual export + `pg_dump` mandatory before touching anything |
 | 11 orders, 0 pending online | no in-flight payment at the moment; re-check at rollout time |
-| `social-webhook` v7 **is deployed with no POST signature check** | known unsigned public endpoint (see §2) |
+| ~~`social-webhook` v7 is deployed with no POST signature check~~ | **resolved 2026-10-10**: v8 / `social-reply` v9 answer 503 (see §2) |
 | Functions deployed: create-razorpay-order, verify-payment, razorpay-webhook, process-refund, courier-webhook, order-email, whatsapp-notify/inbound/remind/broadcast, assistant, social-reply, social-webhook (13); **not** deployed: refund-notify, whatsapp-worker, whatsapp-sync-templates, whatsapp-campaign, razorpay-reconcile | first deployment of five functions |
 
-## 2. Immediate item: the unsigned production social webhook
+## 2. Immediate item: the unsigned production social webhook (RESOLVED 2026-10-10: containment deployed and verified, see `PRODUCTION_SOCIAL_WEBHOOK_CONTAINMENT.md` §7)
+**Status 2026-10-10: resolved.** The containment was deployed from commit `ed98662` and verified (`PRODUCTION_SOCIAL_WEBHOOK_CONTAINMENT.md` §7). The text below is kept as the decision record.
+
 **Update 2026-10-09:** read-only inspection confirmed v7 has no signature check; 0 stored messages; no Meta traffic in 7 days; nothing live depends on it. The exact change, DEV validation and verification are in `PRODUCTION_SOCIAL_WEBHOOK_CONTAINMENT.md`, awaiting your approval.
 The repo is now safe: `social-webhook` and `social-reply` answer 503 unless `SOCIAL_INBOX_ENABLED=1` **and** a Meta app secret is set, and then require a valid `X-Hub-Signature-256`. **Production still runs the old version (v7, unsigned POST)** because you asked me not to modify production. Pick one, using a temporary production-write credential (see the credential section of the earlier plan), whenever you choose, independent of the rest of the rollout:
 - **Disable now (smallest change):** `supabase functions delete social-webhook --project-ref vkcwfwgxelmamuydwrow` (and `social-reply`). Nothing in production reads `social_messages` yet; Meta's webhook for it was never confirmed as configured.

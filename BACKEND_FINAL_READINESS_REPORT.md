@@ -1,7 +1,7 @@
 # Backend final readiness report
 
-Date: 2026-10-10. Backend only. **Frontend untouched (frozen for the first month). Production untouched**: every production access this round was read-only (project list, function list, secret names, SELECT queries).
-**Production rollout: NO-GO** until the prerequisites in section 6 are met. Nothing in this report is production evidence.
+Date: 2026-10-10. Backend only. **Frontend untouched (frozen for the first month).** Production: **one approved change only**, the social-webhook containment (C1, `ed98662`) deployed and verified on 2026-10-10 (section 5). Everything else in production was read-only.
+**Production rollout: NO-GO** until the prerequisites in section 6 are met. Apart from the social-webhook containment (section 5), nothing in this report is production evidence.
 
 ## 1. Release gate found and fixed this round (DEV only)
 **Finding (DEV probe, as a real admin role):** with migrations 034-041, the frozen admin Orders dropdown (a direct `PATCH orders.status`) could move:
@@ -44,7 +44,7 @@ Afterwards the order status, stock, per-line deduction, payment ledger and refun
 - The admin screen still cannot *display* `on_hold`, `rto` or `awaiting_approval` / `rejected` refund states. Decisions are made through the SQL runbook until the post-freeze UI work.
 - Rejecting an amount-mismatch refund before the order expires is undone by the expiry job's automatic refund. I read this from the code; it is not tested. The runbook says to decide after expiry.
 
-## 2. Confirmed project refs and inventory (read-only, 2026-10-10 ~14:26 IST)
+## 2. Confirmed project refs and inventory (read-only, 2026-10-10 ~14:26 IST, before the C1 deploy; since 19:34 IST production runs `social-webhook` v8 and `social-reply` v9, everything else as listed)
 | | PRODUCTION | DEV |
 |---|---|---|
 | Ref / name / region | `vkcwfwgxelmamuydwrow` "Dia Shoppe", ap-southeast-2, ACTIVE_HEALTHY (frontend `.env` points here) | `lffnmycocbtpyvntccbg` "Dia Shoppe DEV", ap-south-1, ACTIVE_HEALTHY |
@@ -72,7 +72,7 @@ Classes: **1** Implemented · **2** Tested with mocks · **3** Deployed and veri
 | Courier webhook (provider-neutral) | 3 | 6: no provider chosen |
 | WhatsApp P1 | 3 | 6: real Meta round trip `p6` not run |
 | AI replies (disabled) | 2 (mock model) | 6: no NVIDIA key; nothing enabled |
-| Social containment | 3 | **production still runs unsigned v7**; package ready (section 5) |
+| Social containment | **5** (deployed and verified in production 2026-10-10) | `social-webhook` v8 / `social-reply` v9 answer 503; smoke 3/3; 0 rows written |
 | E2E against the existing frontend | 6 | not run; the frozen UI's exact PATCH payloads (`updateOrderStatus`, `cancelMyOrder`) are exercised by the API suites |
 
 ## 4. Clean DEV regression (this round)
@@ -97,18 +97,24 @@ Run on 2026-10-10, 14:25:56-14:46:49 IST, with `supabase/tests/run-dev-regressio
 
 **Failures:** none. All of the above uses DEV mocks for Razorpay, Meta and the AI model; none of it is real-provider evidence.
 
-## 5. Production social-webhook containment: ready for review, not applied
+## 5. Production social-webhook containment: DEPLOYED and verified (2026-10-10)
+- Deployed from commit `ed98662` after a read-only pre-deploy check matched the reviewed plan exactly.
+- Production now runs `social-webhook` **v8** and `social-reply` **v9**; the other 11 functions are unchanged.
+- `smoke-test.ps1 -Only social`: **3 / 3 PASS** (all 503). `social_messages` still 0 rows. Edge logs since the deploy show only the 3 probe calls, all 503.
+- Fixed-503 rollback (`social-rollback-to-stub.ps1`) is ready and was not needed.
+
+Review package as approved:
 `PRODUCTION_SOCIAL_WEBHOOK_CONTAINMENT.md` §3-6 now contains:
 - target `vkcwfwgxelmamuydwrow`;
-- current versions v7/v8;
+- the versions deployed before the change (v7/v8);
 - proof that the deployed code equals git `29669e4`;
-- the code diff and SHA-256 of the proposed files (uncommitted: commit needs your approval first);
+- the code diff and SHA-256 of the files (committed as C1, `ed98662`);
 - the deploy command, verification commands and a **rollback to fixed 503 stubs** (`social-rollback-to-stub.ps1`). Rollback never redeploys the unsigned v7 code.
 
-With the current production secrets, the deployed result answers 503 to everything.
+With the production secrets as they are (neither enabling secret set), the deployed result answers 503 to everything, as verified.
 
 ## 6. Production prerequisites (NO-GO until all are met)
-1. Approve and apply the social-webhook containment.
+1. ~~Social-webhook containment~~ **done** (2026-10-10, section 5).
 2. Backup: export + `pg_dump`, verified, off-machine (production has none; no PITR).
 3. `pg_cron`, Vault `project_url`, secrets per the matrix; forbidden DEV secrets absent.
 4. Migrations **033-042** in order. **042 is mandatory while the admin UI is frozen.** Operators trained on `ADMIN_MANUAL_DECISIONS_RUNBOOK.md`.

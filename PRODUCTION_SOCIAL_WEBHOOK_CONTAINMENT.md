@@ -1,6 +1,6 @@
-# Production social-webhook containment: findings and change for approval
+# Production social-webhook containment: findings, change and deployment record
 
-**Nothing has been changed in production.** Everything below was found with read-only checks (function metadata and deployed bundle download, SELECT queries, Edge-log queries) on 2026-10-09 and re-checked on 2026-10-10. The change in section 4 waits for your explicit approval.
+**DEPLOYED 2026-10-10 (commit `ed98662`, your approval): production `social-webhook` v8 and `social-reply` v9 answer 503 to everything; verified (section 7).** Sections 1-3 are the read-only findings from 2026-10-09/10 that led to the change.
 
 ## 1. What is deployed (read-only findings)
 | Item | Finding |
@@ -46,7 +46,7 @@ Disabling breaks nothing that is live (section 1), and the inbox is deferred. Th
   - parsing and the idempotent `upsert` into `social_messages` are the same fields as before; an error now returns **500** "temporary failure" (no internal message) instead of 200 with the error text.
 - The full diff is printed by the command above; it was shown in the 2026-10-10 session.
 
-## 4. The production change (needs your explicit approval; not run)
+## 4. The production change (approved and run on 2026-10-10; record in section 7)
 Prerequisites, in order:
 1. **Commit C1** (the three files above plus the rollback stubs and script, section 6), so production matches a commit (needs your separate approval).
 2. A temporary production-write access token, revoked afterwards.
@@ -94,3 +94,15 @@ Local check on 2026-10-10 (Node with a `Deno.serve` shim; nothing deployed): bot
 **Last resort** (if even the stub cannot be deployed): `npx supabase functions delete social-webhook --project-ref vkcwfwgxelmamuydwrow` and the same for `social-reply`. Both URLs then answer 404, so check 2 reports FAIL on the 503 expectation; confirm the 404s by hand instead.
 
 **Rehearsal:** the stub rollback can be rehearsed on DEV (`-Ref lffnmycocbtpyvntccbg`, then redeploy the repository version with `dev-whatsapp-setup.ps1`). Not done: it is a function deployment and needs your approval.
+
+## 7. Deployment record (2026-10-10, approved by you; C1 only)
+| Step | Evidence |
+|---|---|
+| Pre-deploy (read-only) | target `vkcwfwgxelmamuydwrow` "Dia Shoppe" ap-southeast-2 ACTIVE_HEALTHY; `social-webhook` v7, `social-reply` v8; `SOCIAL_INBOX_ENABLED` and `META_APP_SECRET_SOCIAL` absent; `social_messages` = 0 rows; working tree identical to commit `ed98662` (hashes `7E0FD2B7…`, `D55E6920…`, `1ADA745F…`). The smoke test was **not** run before the deploy: its unsigned POST would have written a row through the open v7 |
+| Deploy | `npx supabase functions deploy social-webhook social-reply --project-ref vkcwfwgxelmamuydwrow --use-api --no-verify-jwt` from commit `ed98662`, exit 0; uploaded exactly `social-webhook/index.ts`, `_shared/meta-signature.ts`, `social-reply/index.ts` |
+| Versions after | `social-webhook` **v8**, `social-reply` **v9**, ACTIVE, `verify_jwt=false`, updated 2026-10-10 14:04 UTC. The other 11 functions are unchanged (same versions and timestamps) |
+| `smoke-test.ps1 -Only social` | **3 / 3 PASS**: GET 503, unsigned POST 503, social-reply 503 |
+| Rows written | `social_messages` = **0** after the probes |
+| Edge logs (14:04 UTC onward) | exactly 3 calls, all **503** (the three probes) |
+
+Rollback is ready but not needed: `social-rollback-to-stub.ps1` (section 6). Nothing else was changed in production: no migration, no secret, no other function.

@@ -16,7 +16,7 @@ Legend: ☑ done and verified as stated · ◐ built and verified on DEV with mo
 | Nemotron evaluation (Nano, Lightning, Super) | **NOT RUN** (no key) | set `NVIDIA_API_KEY` yourself (command in `NEMOTRON_MODEL_RECOMMENDATION.md` §5) |
 | Razorpay TEST: payment.failed, refund events, real reconciliation, partial refund, orphan | **NOT RUN** | `p7_razorpay_real_safety_dev.ps1` (TEST key + browser payments) |
 | Courier provider verification | **NOT RUN** (no provider) | `COURIER_PROVIDER_REQUIREMENTS.md` §2 |
-| Production social-webhook containment | **PREPARED, NOT APPLIED** (review package complete) | your approval of `PRODUCTION_SOCIAL_WEBHOOK_CONTAINMENT.md` §3-6 (commit first, then deploy) |
+| Production social-webhook containment | **DEPLOYED + VERIFIED 2026-10-10** (v8/v9, smoke 3/3, 0 rows) | none; rollback = `social-rollback-to-stub.ps1` if ever needed |
 | Migration 042 + 034-041 in production | **NOT APPLIED** (DEV only) | backup, pg_cron, Vault, then your approval per migration |
 | Operators for manual refund / held-order decisions | **NOT TRAINED** | `ADMIN_MANUAL_DECISIONS_RUNBOOK.md` |
 | Production backup + restore test | **FAIL: no backup exists** (pitr off, 0 backups; checked 2026-10-10) | approve PostgreSQL 17 client tools install (or a plan with backups); you run `pg_dump` with the DB password; restore into a throwaway project you choose |
@@ -88,7 +88,7 @@ Six-class view (1 implemented, 2 mock-tested, 3 DEV-deployed and verified, 4 rea
 - ☑ Money/ops/WhatsApp/courier tables not readable/writable by `anon`/customers beyond admin RPCs/policies.
 - ☑ Append-only audit + hash chain + daily checkpoints.
 - ◐ Frozen admin UI cannot make unsafe status changes (042 guard, DEV only); manual decision procedures are not executable by any API role (DEV only).
-- ☑ Social inbox cannot be reached unsigned (DEV); ☐ **production v7 still unsigned** until the approved containment is applied.
+- ☑ Social inbox cannot be reached unsigned: DEV, and **production since 2026-10-10** (v8/v9 answer 503; verified).
 - ☐ Account-wide Supabase token: adopt separate identities + temporary rollout token.
 - ☐ Off-system copy of the audit head.
 - ☐ Revoke stray TRUNCATE/REFERENCES/TRIGGER grants for `anon`/`authenticated` (found on the social tables in production).
@@ -152,7 +152,7 @@ No production backup · alerts are rows only · the frozen admin UI cannot show 
 - 042 rollback: `DROP TRIGGER trg_orders_status_guard ON public.orders;` (re-opens the frozen-UI gap). The manual functions can stay; they are unreachable from the API.
 
 ## 13. Production status: NO-GO
-Blocking (re-checked read-only 2026-10-10: infra-check pre = 3 FAIL): migration 042 shipped together with 034-041 (frozen admin UI); production backup (none exists; no local pg_dump); `pg_cron` + Vault `project_url`; approved social containment; real Razorpay TEST `p7`; real Meta `p6` (for WhatsApp); secrets; frontend contract; daily alert ownership; rollout token strategy.
+Blocking (re-checked read-only 2026-10-10: infra-check pre = 3 FAIL): migration 042 shipped together with 034-041 (frozen admin UI); production backup (none exists; no local pg_dump); `pg_cron` + Vault `project_url`; real Razorpay TEST `p7`; real Meta `p6` (for WhatsApp); secrets; frontend contract; daily alert ownership; rollout token strategy.
 
 ## Document index
 **Handover package (repository root, committed in C7):** `BACKEND_FINAL_READINESS_REPORT.md` · `BACKEND_FINAL_HANDOFF_CHECKLIST.md` · `PRODUCTION_INFRASTRUCTURE_READINESS.md` · `PRODUCTION_FINANCIAL_ROLLOUT_PLAN.md` · `PRODUCTION_SOCIAL_WEBHOOK_CONTAINMENT.md` · `ADMIN_MANUAL_DECISIONS_RUNBOOK.md` · `META_REAL_INTEGRATION_RUNBOOK.md` · `NEMOTRON_MODEL_RECOMMENDATION.md` · `COURIER_PROVIDER_REQUIREMENTS.md`. Referenced but not in the package (local notes): `P1_WHATSAPP_IMPLEMENTATION.md` · `WHATSAPP_TEST_PLAN.md` · `AI_ARCHITECTURE.md`.
