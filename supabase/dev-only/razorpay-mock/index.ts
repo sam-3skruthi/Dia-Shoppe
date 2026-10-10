@@ -44,12 +44,26 @@ Deno.serve(async (req) => {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data } = await supabase.from("zz_mock_refunds").select("refund_id, amount, rr_id").eq("payment_id", id);
     return json({ entity: "collection", count: data?.length ?? 0,
-      items: (data ?? []).map((r: any) => ({ id: r.refund_id, amount: r.amount, status: "processed", notes: { refund_request_id: r.rr_id } })) });
+      items: (data ?? []).map((r: any) => ({ id: r.refund_id, amount: r.amount, status: r.status ?? "processed", notes: { refund_request_id: r.rr_id } })) });
+  }
+
+  // DEV test fixtures (zz_mock_payments, created by the test runners): the payment list Razorpay's reconciliation API would return
+  if (path === "/v1/payments" && req.method === "GET") {
+    const u = new URL(req.url); const from = Number(u.searchParams.get("from") ?? 0); const to = Number(u.searchParams.get("to") ?? 9e12);
+    const count = Number(u.searchParams.get("count") ?? 10); const skip = Number(u.searchParams.get("skip") ?? 0);
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data } = await supabase.from("zz_mock_payments").select("*").gte("created_at", from).lte("created_at", to).order("created_at").range(skip, skip + count - 1);
+    return json({ entity: "collection", count: data?.length ?? 0, items: (data ?? []).map((r: any) => ({ id: r.id, entity: "payment", amount: Number(r.amount), currency: "INR", status: r.status, order_id: r.order_id, captured: r.captured, amount_refunded: Number(r.amount_refunded ?? 0), created_at: Number(r.created_at) })) });
   }
 
   m = path.match(/^\/v1\/payments\/([^/]+)$/);
   if (m && req.method === "GET") {
     const id = decodeURIComponent(m[1]);
+    {
+      const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: row } = await supabase.from("zz_mock_payments").select("*").eq("id", id).maybeSingle();
+      if (row) return json({ id, entity: "payment", status: row.status, amount: Number(row.amount), currency: "INR", order_id: row.order_id, captured: row.captured, amount_refunded: Number(row.amount_refunded ?? 0), created_at: Number(row.created_at) });
+    }
     const [head, orderId] = id.split("__");
     const parts = head.split("_");               // pay, status, amount, unique
     if (!orderId || parts.length < 3) return json({ error: { description: "mock: unknown payment" } }, 404);

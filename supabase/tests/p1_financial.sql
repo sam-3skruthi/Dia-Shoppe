@@ -95,7 +95,7 @@ BEGIN
   ---- F7 the double-refund guard: a second live refund for the same payment is impossible
   SELECT id INTO v_pay FROM public.payments WHERE razorpay_payment_id = 'pay_f1';
   BEGIN
-    INSERT INTO public.refund_requests (payment_id, order_id, amount, reason, status) VALUES (v_pay, NULL, 1, 'admin_cancel', 'approved');
+    INSERT INTO public.refund_requests (payment_id, order_id, amount, reason, status) VALUES (v_pay, NULL, 199, 'admin_cancel', 'approved');   -- full amount (partial refunds are blocked since 040); the unique guard must still refuse a second live refund
     RAISE EXCEPTION 'FAIL F7: second live refund for one payment was allowed';
   EXCEPTION WHEN unique_violation THEN NULL; END;
 

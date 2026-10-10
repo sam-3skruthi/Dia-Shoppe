@@ -59,10 +59,11 @@ Deno.serve(async (req) => {
     }
 
     const amountPaise = Math.round(Number(claimed.amount) * 100);
-    if (amountPaise > Math.round(Number(payment.amount) * 100)) {
+    // FULL REFUNDS ONLY (launch decision, also enforced by a database trigger): never send anything but the captured amount
+    if (amountPaise !== Math.round(Number(payment.amount) * 100)) {
       await supabase.from("refund_requests")
-        .update({ status: "failed", error: "refund amount exceeds captured amount" }).eq("id", claimed.id);
-      return json({ refunded: false, error: "refund amount exceeds captured amount" });
+        .update({ status: "failed", error: "partial refunds are not supported: refund must equal the captured amount" }).eq("id", claimed.id);
+      return json({ refunded: false, error: "partial refunds are not supported" });
     }
 
     const auth = btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
@@ -76,7 +77,8 @@ Deno.serve(async (req) => {
       });
       if (lr.ok) {
         const list = await lr.json();
-        const existing = (list.items ?? []).find((x: any) => String(x?.notes?.refund_request_id) === String(claimed.id));
+        // a refund Razorpay reports as FAILED is not a refund: it must not stop a retry
+        const existing = (list.items ?? []).find((x: any) => String(x?.notes?.refund_request_id) === String(claimed.id) && x?.status !== "failed");
         if (existing) {
           await supabase.from("refund_requests").update({
             status: "processed", razorpay_refund_id: existing.id, error: null, processed_at: new Date().toISOString(),
@@ -95,7 +97,8 @@ Deno.serve(async (req) => {
         headers: {
           Authorization: `Basic ${auth}`,
           "Content-Type": "application/json",
-          "X-Payment-Idempotency": `refund-req-${claimed.id}`,
+          // one key per ATTEMPT: a retry after a gateway-side failure must not replay the failed response
+          "X-Payment-Idempotency": `refund-req-${claimed.id}-a${claimed.attempts + 1}`,
         },
         body: JSON.stringify({
           amount: amountPaise,

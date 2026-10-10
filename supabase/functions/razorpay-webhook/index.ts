@@ -51,6 +51,26 @@ serve(async (req) => {
     }
 
     const event = JSON.parse(rawBody);
+
+    // payment.failed: recorded for support, never changes an order or moves money
+    if (event.event === "payment.failed") {
+      const sbf = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const { data, error } = await sbf.rpc("record_payment_failure", { p_payment: event.payload?.payment?.entity ?? {} });
+      if (error) throw error;
+      return new Response(JSON.stringify({ received: true, result: data }), { status: 200 });
+    }
+    // refund.created / refund.processed / refund.failed: reconcile with our refund requests
+    if (typeof event.event === "string" && event.event.startsWith("refund.")) {
+      const rf = event.payload?.refund?.entity;
+      const sbr = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const rrId = Number(rf?.notes?.refund_request_id);
+      const { data, error } = await sbr.rpc("settle_refund_event", {
+        p_refund_id: rf?.id, p_payment_id: rf?.payment_id ?? event.payload?.payment?.entity?.id,
+        p_status: String(event.event).replace("refund.", ""), p_amount_paise: rf?.amount ?? 0, p_rr_id: Number.isFinite(rrId) ? rrId : null,
+      });
+      if (error) throw error;
+      return new Response(JSON.stringify({ received: true, result: data }), { status: 200 });
+    }
     if (event.event !== "payment.captured" && event.event !== "order.paid") {
       // Not an event we act on — acknowledge so Razorpay stops retrying
       return new Response(JSON.stringify({ received: true }), { status: 200 });

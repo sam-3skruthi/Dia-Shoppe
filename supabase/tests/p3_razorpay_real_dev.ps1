@@ -22,14 +22,17 @@
 #                          handler on the real payload; it does NOT prove Razorpay->DEV delivery is configured.
 #   -Cleanup               remove the runner's test rows + state file, then exit (no payments, no Razorpay calls)
 #   -Fresh                 ignore the saved state and start over
+#   -SmokeOnly             ONE new payment only, to prove AUTOMATIC Razorpay->DEV webhook delivery: no replay is possible in this mode,
+#                          separate state file, nothing is ever deleted (not even on success)
 #   -SelfTest              offline self-test of the runner's helpers (no network, no keys)
 #   -NoLaunch              only print the checkout URL, do not try to open a browser
 param(
   [Parameter(Mandatory = $true)][string]$Ref,
-  [switch]$NoLaunch, [string]$AdoptPayment = "", [switch]$ReplayWebhook, [switch]$Cleanup, [switch]$Fresh, [switch]$SelfTest
+  [switch]$NoLaunch, [string]$AdoptPayment = "", [switch]$ReplayWebhook, [switch]$Cleanup, [switch]$Fresh, [switch]$SelfTest, [switch]$SmokeOnly
 )
 $ErrorActionPreference = "Stop"
 if ($Ref -eq "vkcwfwgxelmamuydwrow") { throw "DEV only." }
+if ($SmokeOnly -and ($ReplayWebhook -or $AdoptPayment -or $Cleanup)) { throw "-SmokeOnly proves automatic delivery: it cannot be combined with -ReplayWebhook, -AdoptPayment or -Cleanup." }
 # --- runtime compatibility check (Windows PowerShell 5.1+ / PowerShell 7): fail early, before any prompt ---
 function Get-PlainText([System.Security.SecureString]$s) { (New-Object System.Management.Automation.PSCredential('x', $s)).GetNetworkCredential().Password }
 if ($PSVersionTable.PSVersion.Major -lt 5) { throw "PowerShell 5.1 or newer is required (found $($PSVersionTable.PSVersion))." }
@@ -55,7 +58,7 @@ function ConvertTo-Hash($o) {
   if ($o -is [System.Array]) { return , @($o | ForEach-Object { ConvertTo-Hash $_ }) }   # leading comma: keep one-item lists as lists
   return $o
 }
-$StatePath = Join-Path $env:TEMP "dia-dev-rzp-real-state.json"      # ids only: no keys, no secrets
+$StatePath = Join-Path $env:TEMP $(if ($SmokeOnly) { "dia-dev-rzp-smoke-state.json" } else { "dia-dev-rzp-real-state.json" })      # ids only: no keys, no secrets
 function Load-State { if (-not $Fresh -and (Test-Path $StatePath)) { $s = Json-Safe (Get-Content $StatePath -Raw); if ($s -and $s.ref -eq $Ref) { return (ConvertTo-Hash $s) } }; @{ ref = $Ref; product = $null; cases = @{}; done = @(); results = @() } }
 function Save-State { ($script:state | ConvertTo-Json -Depth 8) | Set-Content -Path $StatePath -Encoding UTF8 }
 function Rz-Require($r, [string]$what) { if ($r.Code -ne 200) { throw "$what failed: HTTP $($r.Code) on $($r.Endpoint)$(if ($r.Error) { ' - ' + $r.Error })" } }
@@ -125,6 +128,8 @@ $state = Load-State
 $resumed = ($state.done.Count -gt 0 -or $state.cases.Count -gt 0)
 if ($resumed) { Write-Host "Resuming from saved state: completed = [$($state.done -join ', ')]. Existing orders/payments are reused; no new payment is created for a scenario that already has one." -ForegroundColor Cyan }
 $results = @($state.results | ForEach-Object { [pscustomobject]$_ })
+# A resumed run re-executes whatever failed, so a saved row is superseded by a later row with the same name (e.g. R0 FAIL on a bad key, then PASS after re-entry).
+$results = @($results | Group-Object Test | ForEach-Object { $_.Group[-1] })
 function Check($n, [bool]$ok, $d = "") {
   $row = [pscustomobject]@{ Test = $n; Result = $(if ($ok) { "PASS" } else { "FAIL" }); Detail = [string]$d }
   $script:results += $row; $script:state.results = @($script:results | ForEach-Object { @{ Test = $_.Test; Result = $_.Result; Detail = $_.Detail } }); Save-State
@@ -306,8 +311,38 @@ try {
   Check "R0 TEST credentials accepted by the real API" ($ping.Code -eq 200) "HTTP $($ping.Code) on $($ping.Endpoint)"
   if ($ping.Code -ne 200) { Stop-Run "Razorpay rejected the TEST credentials: $($ping.Error)" }
 
+  # ---------- S1 smoke: ONE fresh payment, NO replay -> the ledger row can only come from Razorpay's own webhook call
+  if ($SmokeOnly -and -not ($state.smokeKey -and $state.done -contains $state.smokeKey)) {
+    if (-not $state.smokeKey) { $state.smokeKey = "S$stamp"; Save-State }      # a NEW order per attempt (an old smoke order may have expired); a resume reuses this one
+    $sk = $state.smokeKey
+    $c = Get-Case $sk 19900                                   # DB order first (pending), then the Razorpay order, then the payment
+    if (-not $c.paymentId) {
+      Check "S1 DB order exists and is pending before any payment" ((Val "select status s from orders where id=$($c.db)" "s") -eq "pending")
+      Check "S1 no ledger row exists yet" ([int](Val "select count(*) c from payments where order_id=$($c.db)" "c") -eq 0)
+      if (-not $state.stock0) { $state.stock0 = Stock; Save-State }
+    }
+    $ps = Ensure-Paid $sk; Confirm-Captured $sk
+    $t0 = Get-Date; Wait-Ledger $sk
+    Write-Host "      Duplicate-safety window: waiting 60s for a possible second event (order.paid) from Razorpay..." -ForegroundColor Cyan; Start-Sleep 60
+    $pid1 = Val "select id i from payments where razorpay_payment_id='$ps'" "i"
+    Check "S1 order settled (confirmed)" ((Val "select status s from orders where id=$($c.db)" "s") -eq "confirmed") "status=$(Val "select status s from orders where id=$($c.db)" "s")"
+    Check "S1 exactly ONE ledger row, amount 199.00, source razorpay-webhook" ([int](Val "select count(*) c from payments where razorpay_payment_id='$ps'" "c") -eq 1 -and [decimal](Val "select amount a from payments where razorpay_payment_id='$ps'" "a") -eq 199 -and (Val "select source s from payments where razorpay_payment_id='$ps'" "s") -eq "razorpay-webhook")
+    Check "S1 stock deducted exactly once ($($state.stock0) -> $($state.stock0 - 1))" ((Stock) -eq ($state.stock0 - 1)) "stock0=$($state.stock0) now=$(Stock)"
+    $aud = Q "select action, count(*) c from financial_audit where entity='payment' and entity_id=$pid1 group by action order by action"
+    $ac = @{}; foreach ($a in @($aud)) { if ($a) { $ac[$a.action] = [int]$a.c } }
+    Check "S1 audit: payment_captured x1 and payment_recorded x1 (no duplicate rows)" ($ac.Count -eq 2 -and $ac["payment_captured"] -eq 1 -and $ac["payment_recorded"] -eq 1) (($ac.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ", ")
+    $chain = Row "select set_config('request.jwt.claims', json_build_object('sub',(select id from user_profiles where email='dev-admin@example.test'),'role','authenticated')::text,true) c, (public.audit_chain_status()->>'intact') i"
+    Check "S1 audit hash chain intact" ($chain -and $chain.i -eq "true") "intact=$($chain.i)"
+    Check "S1 no refund or ops alert was opened for this order" (([int](Val "select count(*) c from refund_requests where order_id=$($c.db)" "c") -eq 0) -and ([int](Val "select count(*) c from ops_events where entity='order' and entity_id=$($c.db)" "c") -eq 0))
+    $lg = $null; try { $iso0 = $t0.ToUniversalTime().AddMinutes(-3).ToString("o"); $iso1 = (Get-Date).ToUniversalTime().AddMinutes(1).ToString("o")
+      $lq = "select log_attributes['response.status_code'] st, log_attributes['request.headers.user_agent'] ua from logs where source='function_edge_logs' and log_attributes['request.pathname'] like '%razorpay-webhook%'"
+      $lg = @((Invoke-RestMethod -Uri ("https://api.supabase.com/v1/projects/$Ref/analytics/endpoints/logs?sql=" + [uri]::EscapeDataString($lq) + "&iso_timestamp_start=$iso0&iso_timestamp_end=$iso1") -Headers @{ Authorization = "Bearer $pat"; "User-Agent" = "Mozilla/5.0" }).result | Where-Object { $_.ua -like "Razorpay-Webhook*" }) } catch { }
+    $ok200 = @($lg | Where-Object { $_.st -eq "200" }).Count; $bad = @($lg | Where-Object { $_.st -ne "200" }).Count
+    Check "S1 DEV edge log: Razorpay-Webhook calls answered HTTP 200 (none rejected)" ($ok200 -ge 1 -and $bad -eq 0) "200=$ok200 other=$bad (log ingestion can lag a minute or two; rerun to resume if only this check failed)"    Mark-Done $sk
+  }
+
   # ---------- R1 normal payment: real captured payload -> ledger -> confirmed -> stock once
-  if ($state.done -notcontains "R1") {
+  if (-not $SmokeOnly -and $state.done -notcontains "R1") {
     $adoptOrder = ""
     if ($AdoptPayment -and -not $state.cases.R1) {
       if ($AdoptPayment -notmatch '^pay_[A-Za-z0-9]+$') { throw "-AdoptPayment must look like pay_xxxxx" }
@@ -332,7 +367,7 @@ try {
   }
 
   # ---------- R2 wrong amount: Razorpay order for Rs 150 while the DB order costs Rs 199
-  if ($state.done -notcontains "R2") {
+  if (-not $SmokeOnly -and $state.done -notcontains "R2") {
     $c2 = Get-Case "R2" 15000
     $p2 = Ensure-Paid "R2"; Confirm-Captured "R2"; Wait-Ledger "R2"
     Check "R2 wrong amount: order NOT confirmed, refund waits for admin" (Wait-For { (Val "select status s from refund_requests where order_id=$($c2.db) order by id limit 1" "s") -eq "requested" } 30)
@@ -348,7 +383,7 @@ try {
   }
 
   # ---------- R3 late payment after cancellation -> automatic full refund
-  if ($state.done -notcontains "R3") {
+  if (-not $SmokeOnly -and $state.done -notcontains "R3") {
     $c3 = Get-Case "R3" 19900
     if ((Val "select status s from orders where id=$($c3.db)" "s") -ne "cancelled" -and -not $c3.paymentId) { Q "update orders set status='cancelled', cancelled_by='customer' where id=$($c3.db)" | Out-Null }
     $p3 = Ensure-Paid "R3"; Confirm-Captured "R3"; Wait-Ledger "R3"
@@ -359,7 +394,7 @@ try {
   }
 
   # ---------- R4 idempotency / crash recovery against the REAL refund API
-  if ($state.done -notcontains "R4") {
+  if (-not $SmokeOnly -and $state.done -notcontains "R4") {
     $c3 = $state.cases.R3; $p3 = $c3.paymentId
     $rr3 = Val "select id from refund_requests where order_id=$($c3.db) order by id limit 1" "id"
     Q "update refund_requests set status='processing', razorpay_refund_id=null, processed_at=null, processing_since=now()-interval '20 minutes' where id=$rr3" | Out-Null
@@ -373,7 +408,7 @@ try {
   }
 
   # ---------- R5 a REAL gateway refusal is recorded, alerted, and does not reach the customer
-  if ($state.done -notcontains "R5") {
+  if (-not $SmokeOnly -and $state.done -notcontains "R5") {
     $c3 = $state.cases.R3; $p3 = $c3.paymentId
     $rr3 = Val "select id from refund_requests where order_id=$($c3.db) order by id limit 1" "id"
     Q "update refund_requests set status='rejected' where id=$rr3" | Out-Null          # lets us open a second request for the same payment
@@ -398,6 +433,7 @@ if ($runError) {
   exit 2
 }
 if ($failed) { Write-Host "$failed check(s) failed. Rows and state are kept for inspection; rerun the same command to resume, or -Cleanup to remove them." -ForegroundColor Yellow; exit 1 }
+if ($SmokeOnly) { Write-Host "Smoke test passed. Nothing was deleted (evidence kept). Switch DEV back with dev-razorpay-mode.ps1 -Mode mock." -ForegroundColor Green; exit 0 }
 Remove-TestRows
 Write-Host "All scenarios passed. Test rows and state file removed. Switch DEV back with dev-razorpay-mode.ps1 -Mode mock." -ForegroundColor Green
 
