@@ -1,133 +1,40 @@
-// courier-webhook — receives shipment status pushes from the courier
-// aggregator (Shiprocket / NimbusPost / direct courier) and moves the order
-// through shipped → delivered automatically, so nobody has to click.
+// courier-webhook — receives shipment status pushes from the courier and applies them to orders through ONE atomic database function
+// (courier_apply_event). Provider-neutral on purpose: the provider has not been chosen, so no provider wording is built in.
 //
-// Setup (Shiprocket): Settings → API → Webhooks → add
-//   URL:   https://<project-ref>.supabase.co/functions/v1/courier-webhook
-//   Token: the same value you set as COURIER_WEBHOOK_TOKEN
-//
-// Secrets to set:
-//   supabase secrets set COURIER_WEBHOOK_TOKEN=<a long random string>
-//
-// The payload shape differs slightly per provider, so we read the common
-// fields defensively rather than assuming one vendor's schema.
-
+// Configuration (function secrets):
+//   COURIER_PROVIDER         key into courier_status_map (default "unconfigured": every status is recorded, none changes an order)
+//   COURIER_AUTH_MODE        "token" (default) | "hmac"
+//   COURIER_WEBHOOK_TOKEN    shared token (mode token), sent as x-api-key | x-webhook-token | Authorization: Bearer
+//   COURIER_WEBHOOK_SECRET   HMAC key (mode hmac) ; COURIER_SIGNATURE_HEADER, COURIER_SIGNATURE_ENCODING (hex|base64), COURIER_SIGNATURE_PREFIX
+// Fails closed when the credential for the chosen mode is missing. Answers 200 to authenticated calls it cannot use, so the courier does
+// not retry forever; the outcome of every call is stored in courier_events.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { eventKey, extractGeneric, verifyCourierAuth } from "../_shared/courier.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-api-key, content-type",
-};
-
-// Courier wording → our order status. Anything not listed is logged but does
-// not change the order (e.g. "pickup scheduled", "in transit" are informational).
-const STATUS_MAP: Record<string, string> = {
-  "shipped": "shipped",
-  "in transit": "shipped",
-  "out for delivery": "shipped",
-  "pickup generated": "shipped",
-  "picked up": "shipped",
-  "delivered": "delivered",
-  // Only the DEFINITIVE return state maps to 'rto': the parcel is back with the seller.
-  // "RTO initiated" / "RTO in transit" are deliberately NOT mapped (logged as courier_status only),
-  // so stock is not restored and no refund request exists until the item is really back.
-  // At 'rto': stock is restored once and an admin must approve any refund (never automatic).
-  "rto delivered": "rto",
-  "cancelled": "cancelled",
-  "canceled": "cancelled",
-};
-
-const pick = (obj: Record<string, unknown>, keys: string[]) => {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (v !== undefined && v !== null && v !== "") return String(v);
-  }
-  return null;
-};
+const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } });
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+  const mode = (Deno.env.get("COURIER_AUTH_MODE") || "token").toLowerCase() === "hmac" ? "hmac" : "token";
+  const raw = new Uint8Array(await req.arrayBuffer());
+  const auth = await verifyCourierAuth(req.headers, raw, {
+    mode, secret: mode === "hmac" ? Deno.env.get("COURIER_WEBHOOK_SECRET") : Deno.env.get("COURIER_WEBHOOK_TOKEN"),
+    signatureHeader: Deno.env.get("COURIER_SIGNATURE_HEADER") || undefined,
+    encoding: Deno.env.get("COURIER_SIGNATURE_ENCODING") === "base64" ? "base64" : "hex",
+    prefix: Deno.env.get("COURIER_SIGNATURE_PREFIX") || undefined,
+  });
+  if (!auth.ok) { console.warn("courier-webhook rejected:", auth.reason); return json({ error: "unauthorized" }, 401); }
 
-  // shared-secret check — the aggregator sends it as a token header
-  const expected = Deno.env.get("COURIER_WEBHOOK_TOKEN");
-  const provided =
-    req.headers.get("x-api-key") ||
-    req.headers.get("x-webhook-token") ||
-    (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  if (!expected || provided !== expected) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  let body: unknown;
+  try { body = JSON.parse(new TextDecoder().decode(raw)); } catch { return json({ received: true, ignored: "not json" }); }
+  const provider = (Deno.env.get("COURIER_PROVIDER") || "unconfigured").toLowerCase();
+  const e = extractGeneric(body);
+  if (!e.status || (!e.orderRef && !e.awb)) return json({ received: true, ignored: "missing status or order reference" });
 
-  try {
-    const body = await req.json();
-    // Shiprocket posts a single object; some providers wrap it in an array
-    const payload = Array.isArray(body) ? body[0] : body;
-
-    const rawStatus = pick(payload, ["current_status", "status", "shipment_status", "orderStatus"]);
-    const awb = pick(payload, ["awb", "awb_code", "waybill", "tracking_number"]);
-    // our order id is echoed back as the merchant/client order reference
-    const orderRef = pick(payload, ["order_id", "channel_order_id", "client_order_id", "merchant_order_id"]);
-    const courier = pick(payload, ["courier_name", "courier", "carrier"]);
-
-    if (!rawStatus || (!orderRef && !awb)) {
-      return new Response(JSON.stringify({ received: true, ignored: "missing status or order reference" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
-    // find the order by our id first, else by the AWB we stored when shipping
-    let query = supabase.from("orders").select("id, status").limit(1);
-    query = orderRef ? query.eq("id", orderRef) : query.eq("tracking_number", awb);
-    const { data: order } = await query.maybeSingle();
-
-    if (!order) {
-      return new Response(JSON.stringify({ received: true, ignored: "unknown order" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // normalise "RTO_Delivered" / "rto-delivered" / "RTO  Delivered" to one spelling
-    const mapped = STATUS_MAP[rawStatus.trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ")];
-
-    const patch: Record<string, unknown> = {
-      courier_status: rawStatus,
-      courier_updated_at: new Date().toISOString(),
-    };
-    if (awb) patch.tracking_number = awb;
-    if (courier) patch.courier = courier;
-
-    // Never move a finished order backwards, and never resurrect a cancelled one.
-    const terminal = new Set(["delivered", "cancelled", "rto"]);
-    if (mapped && !terminal.has(order.status) && order.status !== mapped) {
-      patch.status = mapped;
-      if (mapped === "cancelled") {
-        patch.cancellation_reason = `Courier: ${rawStatus}`;
-        patch.cancelled_at = new Date().toISOString();
-        patch.cancelled_by = "courier";
-      }
-    }
-
-    await supabase.from("orders").update(patch).eq("id", order.id);
-
-    return new Response(
-      JSON.stringify({ received: true, order: order.id, courierStatus: rawStatus, newStatus: patch.status ?? order.status }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  } catch (err) {
-    // Always 200 on parse errors so the aggregator doesn't retry forever
-    return new Response(JSON.stringify({ received: true, error: String(err) }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const { data, error } = await sb.rpc("courier_apply_event", {
+    p_provider: provider, p_event_key: await eventKey(provider, e), p_order_ref: e.orderRef, p_awb: e.awb, p_raw_status: e.status, p_courier: e.courier,
+  });
+  if (error) { console.error("courier_apply_event failed:", error.message); return json({ error: "temporary failure" }, 500); }   // courier retries
+  return json({ received: true, ...data });
 });
