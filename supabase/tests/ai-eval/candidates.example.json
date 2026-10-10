@@ -1,0 +1,34 @@
+[
+  {
+    "name": "A-trial: Nemotron 3 Nano on the NVIDIA hosted trial (EVALUATION ONLY, synthetic data)",
+    "provider": "nvidia-hosted",
+    "model": "<exact id from build.nvidia.com, e.g. the nemotron-3-nano-30b-a3b entry>",
+    "keyEnv": "NVIDIA_API_KEY",
+    "extraBody": { "chat_template_kwargs": { "enable_thinking": false } },
+    "priceInPerMtok": 0,
+    "priceOutPerMtok": 0
+  },
+  {
+    "name": "A-trial: Nemotron 3.5 Lightning on the NVIDIA hosted trial",
+    "provider": "nvidia-hosted",
+    "model": "<exact id from build.nvidia.com>",
+    "keyEnv": "NVIDIA_API_KEY",
+    "extraBody": { "chat_template_kwargs": { "enable_thinking": false } }
+  },
+  {
+    "name": "A-trial: Nemotron 3 Super on the NVIDIA hosted trial",
+    "provider": "nvidia-hosted",
+    "model": "<exact id from build.nvidia.com>",
+    "keyEnv": "NVIDIA_API_KEY",
+    "extraBody": { "chat_template_kwargs": { "enable_thinking": false } }
+  },
+  {
+    "name": "B-candidate: Nemotron 3 Nano via a paid per-token provider (use that provider's real URL, id and prices)",
+    "provider": "openai-compatible",
+    "baseUrl": "https://<provider>/v1",
+    "model": "<provider's exact id>",
+    "keyEnv": "PROVIDER_KEY",
+    "priceInPerMtok": 0.05,
+    "priceOutPerMtok": 0.2
+  }
+]

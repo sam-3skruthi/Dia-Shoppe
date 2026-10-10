@@ -15,7 +15,7 @@ function Code([scriptblock]$b) { try { (& $b).StatusCode } catch { [int]$_.Excep
 $sbRoot = Split-Path $PSScriptRoot -Parent
 $old = [regex]::Match((Get-Content "$sbRoot\migrations\012_whatsapp_trigger.sql" -Raw), "x-hook-secret',\s*'([0-9a-f]+)'").Groups[1].Value
 $v = @{}; foreach ($r in (Q "select name, decrypted_secret s from vault.decrypted_secrets where name like 'hook_%'")) { $v[$r.name] = $r.s }
-$targets = @(@("whatsapp-notify", '{"order_id":999999,"new_status":"shipped"}', "hook_whatsapp_notify"), @("order-email", '{"order_id":999999}', "hook_order_email"), @("process-refund", '{"refund_request_id":999999}', "hook_process_refund"))
+$targets = @(@("whatsapp-worker", '{}', "hook_whatsapp_worker"), @("order-email", '{"order_id":999999}', "hook_order_email"), @("process-refund", '{"refund_request_id":999999}', "hook_process_refund"))
 foreach ($t in $targets) {
   $call = { param($sec) Code { Invoke-WebRequest -Method Post -Uri "$fn/$($t[0])" -Headers @{ "x-hook-secret" = $sec } -ContentType "application/json" -Body $t[1] -UseBasicParsing } }
   Check "H1 $($t[0]): OLD committed secret rejected" ((& $call $old) -eq 401)
@@ -32,7 +32,8 @@ Start-Sleep 8
 $resp = Q "select status_code, count(*) c from net._http_response where id > $since group by 1"
 $n401 = (@($resp) | ? { $_.status_code -eq 401 } | % { $_.c } | Measure-Object -Sum).Sum
 $ok = (@($resp) | ? { $_.status_code -ne 401 } | % { $_.c } | Measure-Object -Sum).Sum
-Check "H4 triggers reached order-email + whatsapp-notify without 401" (($n401 -eq 0 -or -not $n401) -and $ok -ge 2) "responses: $((@($resp) | % { "$($_.status_code)x$($_.c)" }) -join ', ')"
+$wq = (Q "select count(*) c from whatsapp_messages where order_id=$oid")[0].c   # since P1 the WhatsApp update is ENQUEUED by the trigger (no HTTP hook): it must exist
+Check "H4 order trigger reached order-email without 401 and ENQUEUED the WhatsApp update" (($n401 -eq 0 -or -not $n401) -and $ok -ge 1 -and $wq -ge 1) "responses: $((@($resp) | % { "$($_.status_code)x$($_.c)" }) -join ', '); whatsapp rows: $wq"
 Q "delete from orders where id=$oid" | Out-Null
 
 # --- anonymous / customer data exposure over the REAL PostgREST API ----------------------

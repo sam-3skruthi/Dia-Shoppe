@@ -1,0 +1,23 @@
+[
+  {
+    "name": "A1 trial: Nemotron 3 Nano 30B-A3B, reasoning off (EVALUATION ONLY, synthetic data)",
+    "provider": "nvidia-hosted",
+    "model": "nvidia/nemotron-nano-3-30b-a3b",
+    "keyEnv": "NVIDIA_API_KEY",
+    "extraBody": { "chat_template_kwargs": { "enable_thinking": false } }
+  },
+  {
+    "name": "A2 trial: Nemotron 3.5 Lightning 30B-A3B, reasoning off",
+    "provider": "nvidia-hosted",
+    "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+    "keyEnv": "NVIDIA_API_KEY",
+    "extraBody": { "chat_template_kwargs": { "enable_thinking": false } }
+  },
+  {
+    "name": "A3 trial: Nemotron 3 Super 120B-A12B, reasoning off",
+    "provider": "nvidia-hosted",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "keyEnv": "NVIDIA_API_KEY",
+    "extraBody": { "chat_template_kwargs": { "enable_thinking": false } }
+  }
+]
