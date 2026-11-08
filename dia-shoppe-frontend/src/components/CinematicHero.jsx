@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from './motion'
+import { LiquidButton } from './ui/buttons'
 import { FiAward, FiChevronDown } from 'react-icons/fi'
 
 /*
@@ -72,20 +73,12 @@ export default function CinematicHero({ start = true }) {
           </p>
 
           <div className="flex flex-wrap justify-center gap-3">
-            <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
-              <Link
-                to="/products"
-                className="inline-block bg-secondary-500 hover:bg-secondary-400 text-ink-950 font-semibold px-8 py-3.5 rounded-full transition-colors shadow-lg shadow-secondary-900/30"
-              >
-                Shop Now
-              </Link>
-            </motion.div>
-            <a
-              href="#categories"
-              className="inline-block bg-white/10 hover:bg-white/20 border border-white/30 backdrop-blur-md text-white font-semibold px-8 py-3.5 rounded-full transition-colors"
-            >
+            <LiquidButton as={Link} to="/products" tone="dark" variant="accent" size="xl">
+              Shop Now
+            </LiquidButton>
+            <LiquidButton as="a" href="#categories" tone="dark" size="xl">
               Browse Categories
-            </a>
+            </LiquidButton>
           </div>
         </motion.div>
       </div>

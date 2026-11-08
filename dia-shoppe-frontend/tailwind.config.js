@@ -10,8 +10,31 @@ export default {
         sans: ['Manrope', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
         display: ['Marcellus', 'Georgia', 'Cambria', 'serif'],
         doodle: ['Caveat', 'Comic Sans MS', 'cursive'],
+        /* Revamp type system (homepage first): Manrope headings, DM Sans
+           body/UI, IBM Plex Mono for technical labels. Additive — the legacy
+           `sans` / `display` families above are untouched. */
+        heading: ['Manrope', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+        body: ['"DM Sans"', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+        /* NOT named `mono`: that would override Tailwind's default `font-mono`,
+           which existing pages (OrderConfirmation, admin) already use. */
+        tech: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
+        /* ── Diashoppe revamp palette (approved brand foundation) ──
+           Namespaced under `dia` so it never collides with the legacy
+           primary / ink / secondary scales still used by other pages. */
+        dia: {
+          mint: '#F2FFF6',   // Mint Cream — main light surface
+          tea: '#CAFFDE',    // Tea Green — soft highlight surface
+          aqua: '#25C5E9',   // Sky Aqua — action / light accent
+          cyan: '#238689',   // Dark Cyan — accent text & icons
+          ink: '#021225',    // Ink Black — headings, dark sections
+          /* Atmospheric accents (aurora) — proposed, pending your sign-off */
+          emerald: '#1FB98A',
+          turquoise: '#2CD3C2',
+          pale: '#BDF1F8',   // pale aqua
+          violet: '#6B5BD6', // used only as a faint shadow tint
+        },
         /* Editorial cool off-white canvas (the "grey" base) */
         canvas: '#f5f6f8',
         primary: {
