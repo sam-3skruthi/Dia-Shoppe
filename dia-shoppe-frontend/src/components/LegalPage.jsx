@@ -42,15 +42,15 @@ export default function LegalPage({ title, intro, children }) {
       <Header />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <nav className="flex items-center gap-1.5 text-sm text-blue-100/70 mb-6">
-          <Link to="/" className="hover:text-white flex items-center gap-1"><FiHome size={14} /> Home</Link>
+        <nav className="flex items-center gap-1.5 text-sm text-dia-ink/65 mb-6">
+          <Link to="/" className="hover:text-primary-700 flex items-center gap-1"><FiHome size={14} /> Home</Link>
           <FiChevronRight size={14} className="opacity-50" />
-          <span className="text-white font-medium">{title}</span>
+          <span className="text-ink-950 font-medium">{title}</span>
         </nav>
 
         <Reveal>
-          <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white">{title}</h1>
-          <p className="text-blue-100/80 mt-2">Last updated: {business.lastUpdated}</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-semibold text-dia-ink">{title}</h1>
+          <p className="text-dia-ink/65 mt-2">Last updated: {business.lastUpdated}</p>
         </Reveal>
 
         <Reveal className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-10 mt-6">

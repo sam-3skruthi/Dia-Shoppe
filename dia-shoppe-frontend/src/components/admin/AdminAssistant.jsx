@@ -60,7 +60,7 @@ export default function AdminAssistant() {
             <span className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center"><FiZap size={16} className="text-secondary-300" /></span>
             <div className="leading-tight">
               <div className="font-semibold text-sm">Store Assistant</div>
-              <div className="text-[11px] text-blue-100/70">Ask about orders, stock, alerts</div>
+              <div className="text-[11px] text-dia-mint/70">Ask about orders, stock, alerts</div>
             </div>
           </div>
 
@@ -105,7 +105,7 @@ export default function AdminAssistant() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && send()}
               placeholder="Ask the assistant…"
-              className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400"
+              className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300"
             />
             <button onClick={() => send()} disabled={busy || !input.trim()} className="w-9 h-9 rounded-full bg-primary-700 text-white flex items-center justify-center hover:bg-primary-800 disabled:opacity-50 shrink-0">
               <FiSend size={15} />

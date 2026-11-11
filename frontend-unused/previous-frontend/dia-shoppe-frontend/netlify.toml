@@ -1,0 +1,12 @@
+# Netlify config. In the Netlify UI set the site's "Base directory" to
+# dia-shoppe-frontend so these paths resolve. Add the VITE_* env vars in
+# Site settings → Environment variables (see .env.example).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback (same effect as public/_redirects — kept here as a backup)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

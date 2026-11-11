@@ -35,8 +35,6 @@ export default function DiaLoader({ onReveal, onDone }) {
   const rootRef = useRef(null)
   const canvasRef = useRef(null)
   const cssRef = useRef(null)
-  const wordRef = useRef(null)
-  const shineRef = useRef(null)
   const cbRef = useRef({ onReveal, onDone })
   useEffect(() => { cbRef.current = { onReveal, onDone } })
 
@@ -73,18 +71,13 @@ export default function DiaLoader({ onReveal, onDone }) {
       cbRef.current.onDone?.()
     }
 
-    // Shared tail of every timeline: wordmark rises in, then the veil lifts
-    // upward (clip-path), revealing the page that is already rendered below.
-    const addWordmarkAndLift = (t, g, wordAt, liftAt, shineAt) => {
-      t.fromTo(wordRef.current, { y: 26, opacity: 0, filter: 'blur(8px)' },
-        { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.85, ease: 'power3.out' }, wordAt)
-      // The light streak that crosses the D and S carries on across the wordmark,
-      // so the name reads as part of the same mark.
-      t.fromTo(shineRef.current, { '--shine': 0 }, { '--shine': 1, duration: 1.05, ease: 'power1.inOut' }, shineAt)
+    // Shared tail of every timeline: once the D and S have held for a moment,
+    // the veil lifts upward (clip-path), revealing the page already rendered below.
+    // The loader shows ONLY the glass D and S: no wordmark, name or caption.
+    const addLift = (t, g, liftAt) => {
       t.addLabel('lift', liftAt)
       t.call(reveal, null, 'lift')
       t.to(root, { clipPath: 'inset(0 0 100% 0)', duration: 0.95, ease: 'power3.inOut' }, 'lift')
-      t.to(wordRef.current, { y: -18, opacity: 0, duration: 0.5, ease: 'power2.in' }, 'lift')
       t.call(finish)
       return g
     }
@@ -116,8 +109,7 @@ export default function DiaLoader({ onReveal, onDone }) {
         // no motion: letters simply appear, hold briefly, then the veil fades
         g.set([aur, q('[data-d]'), q('[data-s]')], { opacity: 1 })
         tl.fromTo(root, { opacity: 0.0 }, { opacity: 1, duration: 0.35 }, 0)
-        tl.fromTo(wordRef.current, { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0.3)
-        tl.addLabel('lift', 1.5)
+        tl.addLabel('lift', 1.3)
         tl.call(reveal, null, 'lift')
         tl.to(root, { opacity: 0, duration: 0.45 }, 'lift')
         tl.call(finish)
@@ -126,9 +118,9 @@ export default function DiaLoader({ onReveal, onDone }) {
       tl.fromTo(aur, { opacity: 0, xPercent: -12 }, { opacity: 1, xPercent: 0, duration: 1.6, ease: 'power2.out' }, 0)
       tl.fromTo(q('[data-d]'), { opacity: 0, y: 46, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 1.3, ease: 'power3.out' }, 0.45)
       tl.fromTo(q('[data-s]'), { opacity: 0, y: -46, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 1.3, ease: 'power3.out' }, 0.8)
-      // the letters glow softly as the light passes, then the wordmark catches it
+      // the letters glow softly as the light passes
       tl.to(q('img[style*="screen"]'), { filter: 'brightness(0.36)', duration: 0.7, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 1.9)
-      addWordmarkAndLift(tl, g, 1.7, 3.6, 2.4)
+      addLift(tl, g, 3.0)
     }
 
     const buildWebglTimeline = (g, sc) => {
@@ -145,7 +137,7 @@ export default function DiaLoader({ onReveal, onDone }) {
       tl.to(st, { glow: 1, duration: 0.9, ease: 'sine.inOut' }, 2.35)
       tl.to(st, { glow: 0.3, duration: 1.3, ease: 'sine.inOut' }, 3.3)
       tl.fromTo(canvasRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power1.out' }, 0)
-      addWordmarkAndLift(tl, g, 2.6, 4.5, 3.3)
+      addLift(tl, g, 4.0)   // D + S hold briefly after the light sweep, then lift
       draw()
     }
 
@@ -218,37 +210,6 @@ export default function DiaLoader({ onReveal, onDone }) {
     }
   }, [])
 
-  const wordmark = (
-    <div
-      ref={wordRef}
-      className="absolute inset-x-0 bottom-[8vh] text-center font-heading font-bold leading-none tracking-tight text-5xl sm:text-7xl lg:text-[5.5rem] opacity-0 pointer-events-none"
-    >
-      <span className="relative inline-block">
-        <span className="text-dia-ink">Dia </span>
-        <span className="text-dia-cyan">Shoppe</span>
-        {/* moving glint: the same words in pale aqua, revealed through a travelling mask */}
-        <span
-          ref={shineRef}
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 select-none text-[#E9FFFF]"
-          style={{
-            '--shine': 0,
-            WebkitMaskImage: 'linear-gradient(105deg, transparent 36%, #000 50%, transparent 64%)',
-            maskImage: 'linear-gradient(105deg, transparent 36%, #000 50%, transparent 64%)',
-            WebkitMaskSize: '280% 100%',
-            maskSize: '280% 100%',
-            WebkitMaskRepeat: 'no-repeat',
-            maskRepeat: 'no-repeat',
-            WebkitMaskPosition: 'calc(140% - var(--shine) * 180%) 0',
-            maskPosition: 'calc(140% - var(--shine) * 180%) 0',
-            textShadow: '0 0 18px rgba(37,197,233,0.55)',
-          }}
-        >
-          Dia Shoppe
-        </span>
-      </span>
-    </div>
-  )
 
   return (
     <div
@@ -281,7 +242,6 @@ export default function DiaLoader({ onReveal, onDone }) {
         </div>
       </div>
 
-      {wordmark}
 
       <button
         type="button"

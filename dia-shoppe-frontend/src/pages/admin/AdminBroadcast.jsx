@@ -102,7 +102,7 @@ export default function AdminBroadcast() {
               onChange={(e) => setMessage(e.target.value)}
               rows={6}
               placeholder="Write your message… use {{name}} to greet each customer by name."
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-secondary-400 resize-none"
+              className="w-full border border-primary-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary-300 resize-none"
             />
             <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
               <span>Each customer is automatically greeted by name — just write the offer.</span>

@@ -18,7 +18,7 @@ import {
 
 // bottom → top: online sits under COD in the stack
 const REVENUE_SERIES = [
-  { key: 'online', name: 'Paid online', gradient: 'linear-gradient(180deg,#93c5fd,#3b82f6)', color: '#3b82f6' },
+  { key: 'online', name: 'Paid online', gradient: 'linear-gradient(180deg,#86D6D5,#238689)', color: '#238689' },
   { key: 'cod', name: 'Cash on delivery', gradient: 'linear-gradient(180deg,#34d399,#059669)', color: '#10b981' },
 ]
 
@@ -28,15 +28,15 @@ const inr = (n) => '₹' + n.toLocaleString('en-IN')
 // Social inbox page; WhatsApp has its own page.
 const CHANNEL_LINKS = [
   { label: 'Instagram', to: '/admin/social', icon: FiInstagram, tint: 'bg-pink-50 text-pink-600 hover:bg-pink-100' },
-  { label: 'Facebook', to: '/admin/social', icon: FiFacebook, tint: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
+  { label: 'Facebook', to: '/admin/social', icon: FiFacebook, tint: 'bg-primary-50 text-primary-600 hover:bg-primary-100' },
   { label: 'WhatsApp', to: '/admin/whatsapp', icon: FiMessageCircle, tint: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
 ]
 
 const STATUS_STYLE = {
   pending: 'bg-amber-50 text-amber-600',
-  paid: 'bg-blue-50 text-blue-600',
+  paid: 'bg-primary-50 text-primary-600',
   confirmed: 'bg-secondary-50 text-secondary-700',
-  shipped: 'bg-indigo-50 text-indigo-600',
+  shipped: 'bg-secondary-50 text-secondary-600',
   delivered: 'bg-emerald-50 text-emerald-600',
   cancelled: 'bg-red-50 text-red-500',
 }
@@ -71,9 +71,9 @@ function Kpi({ icon: Icon, label, value, sub, tint }) {
 // Orders that need a worker to do something next
 const ATTENTION = [
   { status: 'pending', label: 'Awaiting payment', icon: FiClock, tint: 'bg-amber-50 text-amber-600' },
-  { status: 'paid', label: 'Paid — confirm order', icon: FiCheckCircle, tint: 'bg-blue-50 text-blue-600' },
+  { status: 'paid', label: 'Paid — confirm order', icon: FiCheckCircle, tint: 'bg-primary-50 text-primary-600' },
   { status: 'confirmed', label: 'To pack & ship', icon: FiPackage, tint: 'bg-secondary-50 text-secondary-700' },
-  { status: 'shipped', label: 'In transit', icon: FiTruck, tint: 'bg-indigo-50 text-indigo-600' },
+  { status: 'shipped', label: 'In transit', icon: FiTruck, tint: 'bg-secondary-50 text-secondary-600' },
 ]
 
 export default function AdminDashboard() {

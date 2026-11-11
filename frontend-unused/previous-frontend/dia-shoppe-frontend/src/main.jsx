@@ -1,0 +1,39 @@
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import '@fontsource/manrope/400.css'
+import '@fontsource/manrope/500.css'
+import '@fontsource/manrope/600.css'
+import '@fontsource/manrope/700.css'
+import '@fontsource/manrope/800.css'
+import '@fontsource/marcellus/400.css'
+import '@fontsource/caveat/700.css'
+import './index.css'
+import App from './App.jsx'
+import { initSentry, Sentry } from './lib/sentry'
+
+initSentry()
+
+// Sentry's error boundary shows a friendly fallback (and reports the error)
+// if a render crash ever happens in production; in dev it re-throws so you
+// still see the overlay.
+function Fallback() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 24, fontFamily: 'Manrope, system-ui, sans-serif' }}>
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0b1f3a' }}>Something went wrong</h1>
+        <p style={{ marginTop: 8, color: '#475569' }}>Please refresh the page. Our team has been notified.</p>
+        <button onClick={() => window.location.assign('/')} style={{ marginTop: 16, background: '#1e3a8a', color: '#fff', border: 0, borderRadius: 999, padding: '10px 20px', fontWeight: 600, cursor: 'pointer' }}>
+          Back to home
+        </button>
+      </div>
+    </div>
+  )
+}
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <Sentry.ErrorBoundary fallback={<Fallback />}>
+      <App />
+    </Sentry.ErrorBoundary>
+  </StrictMode>,
+)

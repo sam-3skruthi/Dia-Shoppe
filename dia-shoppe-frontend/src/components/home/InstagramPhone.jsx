@@ -123,7 +123,7 @@ export default function InstagramPhone() {
   const href = isLink(social.instagram?.url) ? social.instagram.url.trim() : null
 
   return (
-    <section ref={rootRef} id="about" className="dia-aurora dia-grain relative isolate overflow-hidden pb-16 pt-20 sm:pt-28">
+    <section ref={rootRef} id="about" className="relative overflow-hidden pb-16 pt-20 sm:pt-28">
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <ContainerScroll
           cardClassName="relative mx-auto w-full max-w-[300px]"

@@ -28,7 +28,7 @@ function Field({ label, ...props }) {
       <span className="text-sm font-medium text-gray-600">{label}</span>
       <input
         {...props}
-        className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-secondary-400 focus:border-secondary-400"
+        className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500"
       />
     </label>
   )
@@ -128,11 +128,11 @@ export default function Checkout() {
       <Header />
 
       {/* header band — transparent, sits on the page backdrop */}
-      <section className="relative text-white">
+      <section className="relative text-dia-ink">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Reveal>
             <h1 className="font-display text-3xl sm:text-4xl font-semibold leading-tight">Checkout</h1>
-            <p className="text-blue-100/85 mt-2">Almost there — just a few details to complete your order.</p>
+            <p className="text-dia-ink/65 mt-2">Almost there — just a few details to complete your order.</p>
           </Reveal>
         </div>
       </section>
@@ -210,7 +210,7 @@ export default function Checkout() {
                       value={m.value}
                       checked={payment === m.value}
                       onChange={() => setPayment(m.value)}
-                      className="w-4 h-4 accent-primary-800 focus:ring-primary-500"
+                      className="w-4 h-4 accent-primary-800 focus:ring-primary-300"
                     />
                     <div>
                       <div className="text-sm font-semibold text-ink-900">{m.label}</div>
@@ -257,7 +257,7 @@ export default function Checkout() {
               </div>
             </Reveal>
 
-            <Link to="/cart" className="inline-flex items-center gap-2 text-secondary-200 font-semibold text-sm hover:text-white transition-colors">
+            <Link to="/cart" className="inline-flex items-center gap-2 text-primary-700 font-semibold text-sm hover:text-ink-950 transition-colors">
               <FiArrowLeft size={16} /> Back to cart
             </Link>
           </div>

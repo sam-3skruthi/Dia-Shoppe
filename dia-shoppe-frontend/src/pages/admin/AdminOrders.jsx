@@ -20,7 +20,7 @@ const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 
 const statusColor = (s) =>
   s === 'delivered' ? 'bg-emerald-50 text-emerald-600'
-    : s === 'shipped' ? 'bg-blue-50 text-blue-600'
+    : s === 'shipped' ? 'bg-primary-50 text-primary-600'
     : s === 'confirmed' ? 'bg-amber-50 text-amber-600'
     : s === 'paid' ? 'bg-secondary-50 text-secondary-700'
     : s === 'cancelled' ? 'bg-red-50 text-red-500'
@@ -244,7 +244,7 @@ export default function AdminOrders() {
                 value={shipModal.courier}
                 onChange={(e) => setShipModal((m) => ({ ...m, courier: e.target.value }))}
                 placeholder="e.g. Delhivery, DTDC, Blue Dart"
-                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-secondary-400"
+                className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-300"
               />
             </label>
             <label className="block mb-5">
@@ -254,13 +254,13 @@ export default function AdminOrders() {
                   value={shipModal.trackingNumber}
                   onChange={(e) => setShipModal((m) => ({ ...m, trackingNumber: e.target.value }))}
                   placeholder="e.g. DL123456789IN"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-secondary-400"
+                  className="flex-1 border border-primary-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-300"
                 />
                 <button
                   type="button"
                   onClick={() => setScanning(true)}
                   title="Scan the barcode on the courier label"
-                  className="shrink-0 inline-flex items-center gap-1.5 border border-gray-300 rounded-lg px-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+                  className="shrink-0 inline-flex items-center gap-1.5 border border-primary-200 rounded-xl px-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
                 >
                   <FiCamera size={16} /> Scan
                 </button>

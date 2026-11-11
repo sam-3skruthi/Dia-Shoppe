@@ -37,8 +37,7 @@ export default function FeaturedDepth({ products }) {
   }
 
   return (
-    <section ref={rootRef} className="relative overflow-hidden bg-white py-20 sm:py-28">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-dia-mint to-transparent" aria-hidden="true" />
+    <section ref={rootRef} className="relative overflow-hidden py-20 sm:py-28">
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div data-reveal className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>

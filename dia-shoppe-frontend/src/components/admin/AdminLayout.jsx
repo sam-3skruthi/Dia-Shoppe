@@ -38,7 +38,7 @@ function SidebarContent({ onNavigate }) {
 
       {/* nav */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <div className="px-3 text-[11px] uppercase tracking-wider text-blue-200/50 font-semibold mb-2">Main Menu</div>
+        <div className="px-3 text-[11px] uppercase tracking-wider text-dia-tea/50 font-semibold mb-2">Main Menu</div>
         {NAV.map((item) => (
           <NavLink
             key={item.to}
@@ -47,7 +47,7 @@ function SidebarContent({ onNavigate }) {
             onClick={onNavigate}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                isActive ? 'bg-secondary-500 text-white' : 'text-blue-100/80 hover:bg-white/10 hover:text-white'
+                isActive ? 'bg-secondary-500 text-white' : 'text-dia-mint/80 hover:bg-white/10 hover:text-white'
               }`
             }
           >
@@ -55,17 +55,17 @@ function SidebarContent({ onNavigate }) {
           </NavLink>
         ))}
 
-        <div className="px-3 text-[11px] uppercase tracking-wider text-blue-200/50 font-semibold mb-2 mt-5">Store</div>
+        <div className="px-3 text-[11px] uppercase tracking-wider text-dia-tea/50 font-semibold mb-2 mt-5">Store</div>
         <Link
           to="/"
           onClick={onNavigate}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-100/80 hover:bg-white/10 hover:text-white transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-dia-mint/80 hover:bg-white/10 hover:text-white transition-colors"
         >
           <FiExternalLink size={18} /> View Storefront
         </Link>
         <button
           onClick={() => { logout(); navigate('/') }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-100/80 hover:bg-white/10 hover:text-white transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-dia-mint/80 hover:bg-white/10 hover:text-white transition-colors"
         >
           <FiLogOut size={18} /> Logout
         </button>
@@ -79,7 +79,7 @@ function SidebarContent({ onNavigate }) {
           </span>
           <div className="min-w-0">
             <div className="text-sm font-semibold text-white truncate">{user?.name || 'Admin'}</div>
-            <div className="text-xs text-blue-200/60">Super Admin</div>
+            <div className="text-xs text-dia-tea/60">Super Admin</div>
           </div>
         </div>
       </div>
@@ -91,7 +91,7 @@ export default function AdminLayout({ title, subtitle, actions, children }) {
   const [mobileNav, setMobileNav] = useState(false)
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
       {/* fixed sidebar (desktop) */}
       <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-ink-950 via-primary-950 to-ink-950">
         <SidebarContent />
@@ -111,14 +111,14 @@ export default function AdminLayout({ title, subtitle, actions, children }) {
       {/* content */}
       <div className="lg:pl-64">
         {/* topbar */}
-        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-gray-100">
+        <header className="sticky top-0 z-30 bg-[#F2FFF6]/85 backdrop-blur-md border-b border-primary-100">
           <div className="flex items-center gap-4 px-4 sm:px-6 h-16">
             <button className="lg:hidden text-gray-600" onClick={() => setMobileNav(true)}><FiMenu size={22} /></button>
             <div className="min-w-0 flex-1">
               <h1 className="font-display text-lg sm:text-xl font-semibold text-ink-900 leading-tight truncate">{title}</h1>
               {subtitle && <p className="text-xs text-gray-400 truncate">{subtitle}</p>}
             </div>
-            <div className="hidden md:flex items-center border border-gray-200 rounded-lg px-3 py-1.5 bg-gray-50 text-gray-400">
+            <div className="hidden md:flex items-center border border-primary-200 rounded-xl px-3 py-1.5 bg-white/80 text-primary-600">
               <FiSearch size={15} />
               <input placeholder="Search…" className="bg-transparent outline-none text-sm px-2 w-40 text-gray-700" />
             </div>

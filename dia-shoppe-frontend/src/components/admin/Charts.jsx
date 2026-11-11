@@ -43,7 +43,7 @@ export function StackedBars({ data, series, height = 200, valueFmt = (v) => v })
                           {s.name}: <span className="font-semibold">{valueFmt(d[s.key] || 0)}</span>
                         </div>
                       ))}
-                      <div className="border-t border-white/15 mt-1 pt-1 text-blue-100/80">Total: {valueFmt(total)}</div>
+                      <div className="border-t border-white/15 mt-1 pt-1 text-dia-mint/80">Total: {valueFmt(total)}</div>
                     </div>
                   )}
                   {/* bar */}
@@ -85,7 +85,7 @@ export function StackedBars({ data, series, height = 200, valueFmt = (v) => v })
 }
 
 /* ── Smooth gradient area chart (funnel / trend) ── */
-export function AreaChart({ values, height = 170, stroke = '#3b82f6', gradientId = 'areaGrad', labels }) {
+export function AreaChart({ values, height = 170, stroke = '#238689', gradientId = 'areaGrad', labels }) {
   const W = 100
   const max = Math.max(1, ...values)
   const n = values.length

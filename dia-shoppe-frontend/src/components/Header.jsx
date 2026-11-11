@@ -33,7 +33,7 @@ export default function Header({ showSearch = false, overlay = false, brandReady
 
   const headerCls = overlay
     ? 'absolute top-0 inset-x-0 z-50 bg-transparent'
-    : 'sticky top-0 z-50 bg-white shadow-sm'
+    : 'sticky top-0 z-50 bg-[#F2FFF6]/85 backdrop-blur-md border-b border-primary-100 shadow-[0_8px_24px_-20px_rgba(2,18,37,0.45)]'
   const link = overlay
     ? 'text-sm text-white/85 hover:text-white font-medium transition-colors'
     : 'text-sm text-gray-600 hover:text-primary-700 font-medium'
@@ -64,7 +64,7 @@ export default function Header({ showSearch = false, overlay = false, brandReady
           {/* Search bar — desktop, only when enabled */}
           {showSearch && (
             <div className="hidden md:flex flex-1 max-w-xl mx-8">
-              <div className="flex w-full border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-secondary-400 bg-white">
+              <div className="flex w-full border border-primary-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary-300 bg-white">
                 <input
                   type="text"
                   placeholder="Search products, brands..."
@@ -153,7 +153,7 @@ export default function Header({ showSearch = false, overlay = false, brandReady
         {/* Mobile search — only when enabled */}
         {showSearch && (
           <div className="md:hidden pb-3">
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden bg-white">
+            <div className="flex border border-primary-200 rounded-xl overflow-hidden bg-white">
               <input type="text" placeholder="Search products..." className="flex-1 px-4 py-2 text-sm outline-none" />
               <button className="bg-primary-700 text-white px-4"><FiSearch size={16} /></button>
             </div>

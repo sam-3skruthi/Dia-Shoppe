@@ -41,7 +41,7 @@ export default function BentoSection() {
               <div className="font-display text-3xl font-semibold">
                 <CountUp end={10000} />+
               </div>
-              <p className="text-blue-100/90 text-sm mt-1 max-w-xs">
+              <p className="text-dia-mint/90 text-sm mt-1 max-w-xs">
                 Customers across India served with authentic, doctor-trusted
                 equipment since 2004.
               </p>
@@ -59,7 +59,7 @@ export default function BentoSection() {
               <div className="font-display text-5xl font-semibold leading-none">
                 <CountUp end={100} suffix="%" />
               </div>
-              <p className="text-blue-100/80 text-sm mt-2">Authentic, brand-sourced products</p>
+              <p className="text-dia-mint/80 text-sm mt-2">Authentic, brand-sourced products</p>
             </div>
           </motion.div>
 
@@ -100,7 +100,7 @@ export default function BentoSection() {
             <div className="relative z-10">
               <div className="flex items-center gap-2">
                 <FiActivity className="text-secondary-300" size={18} />
-                <span className="text-xs uppercase tracking-[0.18em] text-blue-100/70">One trusted partner</span>
+                <span className="text-xs uppercase tracking-[0.18em] text-dia-mint/70">One trusted partner</span>
               </div>
               <p className="font-display text-2xl sm:text-3xl font-semibold mt-2">
                 One trusted partner for every device.

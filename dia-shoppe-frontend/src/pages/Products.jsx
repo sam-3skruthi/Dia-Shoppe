@@ -85,7 +85,7 @@ export default function Products() {
                 type="checkbox"
                 checked={activeCats.includes(c.slug)}
                 onChange={() => toggle(activeCats, setActiveCats, c.slug)}
-                className="w-4 h-4 rounded border-gray-300 text-secondary-500 focus:ring-secondary-400"
+                className="w-4 h-4 rounded border-gray-300 text-secondary-500 focus:ring-primary-300"
               />
               {c.label}
             </label>
@@ -102,7 +102,7 @@ export default function Products() {
                 type="checkbox"
                 checked={activeBrands.includes(b)}
                 onChange={() => toggle(activeBrands, setActiveBrands, b)}
-                className="w-4 h-4 rounded border-gray-300 text-secondary-500 focus:ring-secondary-400"
+                className="w-4 h-4 rounded border-gray-300 text-secondary-500 focus:ring-primary-300"
               />
               {b}
             </label>
@@ -133,7 +133,7 @@ export default function Products() {
             type="checkbox"
             checked={inStockOnly}
             onChange={() => setInStockOnly(!inStockOnly)}
-            className="w-4 h-4 rounded border-gray-300 text-secondary-500 focus:ring-secondary-400"
+            className="w-4 h-4 rounded border-gray-300 text-secondary-500 focus:ring-primary-300"
           />
           In stock only
         </label>
@@ -165,7 +165,7 @@ export default function Products() {
               <h1 className="font-display text-4xl sm:text-5xl font-semibold leading-tight">
                 Quality equipment<br className="hidden sm:block" /> for every need
               </h1>
-              <p className="text-blue-100/80 mt-3 max-w-xl text-lg">
+              <p className="text-dia-mint/80 mt-3 max-w-xl text-lg">
                 Authentic glucose &amp; BP monitors, respiratory support and hospital
                 essentials — from the brands clinicians trust, delivered across India.
               </p>
@@ -182,7 +182,7 @@ export default function Products() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Mobile search */}
         <div className="md:hidden mb-5">
-          <div className="flex w-full border border-gray-300 rounded-lg overflow-hidden bg-white focus-within:ring-2 focus-within:ring-secondary-400">
+          <div className="flex w-full border border-primary-200 rounded-xl overflow-hidden bg-white focus-within:ring-2 focus-within:ring-primary-300">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -200,7 +200,7 @@ export default function Products() {
           </p>
           <div className="flex items-center gap-3">
             {/* Desktop search */}
-            <div className="hidden md:flex border border-gray-300 rounded-lg overflow-hidden bg-white focus-within:ring-2 focus-within:ring-secondary-400">
+            <div className="hidden md:flex border border-primary-200 rounded-xl overflow-hidden bg-white focus-within:ring-2 focus-within:ring-primary-300">
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -212,7 +212,7 @@ export default function Products() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-secondary-400 text-gray-700"
+              className="border border-primary-200 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-primary-300 text-gray-700"
             >
               {sortOptions.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -220,7 +220,7 @@ export default function Products() {
             </select>
             <button
               onClick={() => setFiltersOpen(true)}
-              className="lg:hidden flex items-center gap-1.5 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700"
+              className="lg:hidden flex items-center gap-1.5 border border-primary-200 rounded-xl px-3 py-2 text-sm bg-white text-gray-700"
             >
               <FiSliders size={16} /> Filters
               {activeFilterCount > 0 && (

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dia Shoppe — Mobile Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    background: radial-gradient(1200px 600px at 50% -10%, #0e2a4a 0%, #040d18 60%);
+    font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 18px 12px 28px;
+    color: #9fb3c8;
+  }
+  .toolbar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    justify-content: center; margin-bottom: 16px;
+  }
+  .toolbar .title {
+    font-weight: 700; color: #e8f0f7; letter-spacing: .02em; margin-right: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toolbar .title .dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981; }
+  button {
+    background: rgba(255,255,255,.06); color: #cfe0ee;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 999px; padding: 6px 14px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  button:hover { background: rgba(255,255,255,.12); }
+  button.active { background: #10b981; border-color: #10b981; color: #04121b; }
+  .size-label { font-size: 12px; opacity: .7; margin-left: 6px; }
+
+  .phone {
+    position: relative;
+    border-radius: 54px;
+    background: #0b0f14;
+    padding: 14px;
+    box-shadow:
+      0 0 0 2px #1c2732,
+      0 30px 80px -20px rgba(0,0,0,.85),
+      0 0 60px -20px rgba(16,185,129,.25);
+  }
+  /* side buttons */
+  .phone::before, .phone::after {
+    content: ''; position: absolute; background: #1c2732; border-radius: 2px;
+  }
+  .phone::before { left: -4px; top: 130px; width: 4px; height: 64px; }   /* volume */
+  .phone::after  { right: -4px; top: 170px; width: 4px; height: 90px; }  /* power */
+
+  .screen {
+    position: relative; overflow: hidden;
+    border-radius: 40px; background: #fff;
+  }
+  iframe { display: block; border: 0; background: #fff; }
+
+  /* dynamic island */
+  .island {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 118px; height: 26px; border-radius: 999px; background: #0b0f14;
+    z-index: 10; pointer-events: none;
+    box-shadow: inset 0 0 4px rgba(255,255,255,.06);
+  }
+  .hint { margin-top: 14px; font-size: 12px; opacity: .55; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <span class="title"><span class="dot"></span> Dia Shoppe · Mobile Preview</span>
+    <button data-w="375" data-h="667">iPhone SE</button>
+    <button data-w="390" data-h="844" class="active">iPhone 14</button>
+    <button data-w="412" data-h="915">Pixel 7</button>
+    <button id="reload">⟳ Reload</button>
+    <span class="size-label" id="size">390 × 844</span>
+  </div>
+
+  <div class="phone">
+    <div class="screen">
+      <div class="island"></div>
+      <iframe id="site" src="/" width="390" height="844" title="Dia Shoppe mobile view"></iframe>
+    </div>
+  </div>
+
+  <p class="hint">Live site rendered at true mobile width — interact with it directly.</p>
+
+<script>
+  const frame = document.getElementById('site');
+  const size = document.getElementById('size');
+  document.querySelectorAll('button[data-w]').forEach((b) => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('button[data-w]').forEach((x) => x.classList.remove('active'));
+      b.classList.add('active');
+      frame.width = b.dataset.w;
+      frame.height = b.dataset.h;
+      size.textContent = b.dataset.w + ' × ' + b.dataset.h;
+    });
+  });
+  document.getElementById('reload').addEventListener('click', () => {
+    frame.src = frame.src; // eslint-disable-line no-self-assign
+  });
+</script>
+</body>
+</html>

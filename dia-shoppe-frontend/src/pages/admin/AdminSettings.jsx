@@ -70,7 +70,7 @@ export default function AdminSettings() {
       </div>
 
       {/* pointer to where the message wording moved */}
-      <div className="flex gap-2.5 text-sm text-gray-600 bg-blue-50/60 border border-blue-100 rounded-xl p-4">
+      <div className="flex gap-2.5 text-sm text-gray-600 bg-primary-50/60 border border-primary-100 rounded-xl p-4">
         <FiInfo className="text-primary-600 shrink-0 mt-0.5" size={16} />
         <p>
           Looking for the WhatsApp message wording? It now lives on the{' '}

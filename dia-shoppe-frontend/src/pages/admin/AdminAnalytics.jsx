@@ -139,7 +139,7 @@ export default function AdminAnalytics() {
         </span>
         <div className="flex-1 min-w-[220px]">
           <div className="font-semibold">Visitor analytics live in PostHog</div>
-          <p className="text-sm text-blue-100/70">
+          <p className="text-sm text-dia-mint/70">
             Traffic, conversion funnels (visited → viewed → added to cart → bought) and session replays.
             This page sticks to exact sales numbers from the database.
           </p>
@@ -148,7 +148,7 @@ export default function AdminAnalytics() {
           href="https://us.posthog.com"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 bg-white text-ink-900 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-blue-50 transition-colors"
+          className="inline-flex items-center gap-1.5 bg-white text-ink-900 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-primary-50 transition-colors"
         >
           Open PostHog <FiExternalLink size={14} />
         </a>
@@ -190,7 +190,7 @@ export default function AdminAnalytics() {
             <div className="space-y-3">
               {stats.topBrands.map((b) => (
                 <BarRow key={b.brand} label={b.brand} value={b.revenue} max={maxBrand}
-                  valueLabel={`${b.units} sold · ${inr(b.revenue)}`} color="#1e40af" />
+                  valueLabel={`${b.units} sold · ${inr(b.revenue)}`} color="#1D6F72" />
               ))}
             </div>
           )}
@@ -246,7 +246,7 @@ export default function AdminAnalytics() {
             <div className="space-y-3">
               {stats.byCategory.map((c) => (
                 <BarRow key={c.category} label={c.category} value={c.revenue} max={maxCat}
-                  valueLabel={inr(c.revenue)} color="#3b82f6" />
+                  valueLabel={inr(c.revenue)} color="#238689" />
               ))}
             </div>
           )}
@@ -272,7 +272,7 @@ export default function AdminAnalytics() {
             <div className="space-y-4">
               {[
                 { label: 'Cash on Delivery', count: stats.codOrders, color: '#10b981' },
-                { label: 'Paid Online', count: stats.onlineOrders, color: '#3b82f6' },
+                { label: 'Paid Online', count: stats.onlineOrders, color: '#238689' },
               ].map((m) => {
                 const pct = Math.round((m.count / stats.completedOrders) * 100)
                 return (

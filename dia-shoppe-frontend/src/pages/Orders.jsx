@@ -56,7 +56,7 @@ function CancelDialog({ order, onClose, onCancelled }) {
         {reason === 'Other' && (
           <textarea
             value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Tell us a little more…"
-            className="mt-3 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400"
+            className="mt-3 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300"
           />
         )}
 
@@ -184,7 +184,7 @@ export default function Orders() {
         <Header />
         <div className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16 space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-32 rounded-2xl bg-white/10 animate-pulse" />
+            <div key={i} className="h-32 rounded-2xl bg-primary-100/70 animate-pulse" />
           ))}
         </div>
         <Footer />
@@ -199,11 +199,11 @@ export default function Orders() {
         <PageBackdrop />
         <Header />
         <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-32">
-          <div className="w-20 h-20 rounded-full bg-white/10 border border-white/15 flex items-center justify-center mb-5">
-            <FiPackage size={34} className="text-secondary-300" />
+          <div className="w-20 h-20 rounded-full bg-white/80 border border-primary-200 flex items-center justify-center mb-5">
+            <FiPackage size={34} className="text-primary-700" />
           </div>
-          <h1 className="font-display text-3xl font-semibold text-white mb-2">No orders yet</h1>
-          <p className="text-blue-100/80 mb-6 max-w-sm">When you place an order, it’ll show up here so you can track and revisit it anytime.</p>
+          <h1 className="font-display text-3xl font-semibold text-dia-ink mb-2">No orders yet</h1>
+          <p className="text-dia-ink/65 mb-6 max-w-sm">When you place an order, it’ll show up here so you can track and revisit it anytime.</p>
           <Link to="/products" className="inline-flex items-center gap-2 bg-secondary-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-secondary-600 transition-colors">
             <FiShoppingBag size={18} /> Start shopping
           </Link>
@@ -219,11 +219,11 @@ export default function Orders() {
       <Header />
 
       {/* header band — transparent over the navy backdrop */}
-      <section className="relative text-white">
+      <section className="relative text-dia-ink">
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Reveal>
             <h1 className="font-display text-3xl sm:text-4xl font-semibold leading-tight">My Orders</h1>
-            <p className="text-blue-100/85 mt-2">{orders.length} {orders.length === 1 ? 'order' : 'orders'} placed</p>
+            <p className="text-dia-ink/65 mt-2">{orders.length} {orders.length === 1 ? 'order' : 'orders'} placed</p>
           </Reveal>
         </div>
       </section>
@@ -248,7 +248,7 @@ export default function Orders() {
           ))}
         </Stagger>
 
-        <Link to="/products" className="inline-flex items-center gap-2 text-secondary-200 font-semibold text-sm hover:text-white transition-colors mt-8">
+        <Link to="/products" className="inline-flex items-center gap-2 text-primary-700 font-semibold text-sm hover:text-ink-950 transition-colors mt-8">
           <FiShoppingBag size={16} /> Continue shopping
         </Link>
       </section>

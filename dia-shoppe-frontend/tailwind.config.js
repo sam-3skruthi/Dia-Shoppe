@@ -7,8 +7,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Manrope', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
-        display: ['Marcellus', 'Georgia', 'Cambria', 'serif'],
+        /* Global type system (revamp): DM Sans for body/UI everywhere, Manrope
+           for every heading (font-display is used by all pages' headings). */
+        sans: ['"DM Sans"', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ['Manrope', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
         doodle: ['Caveat', 'Comic Sans MS', 'cursive'],
         /* Revamp type system (homepage first): Manrope headings, DM Sans
            body/UI, IBM Plex Mono for technical labels. Additive — the legacy
@@ -35,39 +37,43 @@ export default {
           pale: '#BDF1F8',   // pale aqua
           violet: '#6B5BD6', // used only as a faint shadow tint
         },
-        /* Editorial cool off-white canvas (the "grey" base) */
-        canvas: '#f5f6f8',
+        /* ── Legacy scale names, remapped to the Diashoppe brand ──
+           Every page already styles itself with primary / secondary / ink /
+           canvas, so remapping them here moves the whole app (storefront,
+           auth, cart, orders, admin) onto one palette without touching logic. */
+        canvas: '#F2FFF6',            // Mint Cream
+        /* primary = Dark Cyan family (buttons, links, focus). 700 is the exact brand Dark Cyan. */
         primary: {
-          50:  '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50:  '#F0FBFA',
+          100: '#DDF5F3',
+          200: '#B7E9E7',
+          300: '#86D6D5',
+          400: '#55BFC0',
+          500: '#33A5A8',
+          600: '#2A9598',
+          700: '#238689',
+          800: '#1D6F72',
+          900: '#18595C',
+          950: '#0E3A3E',
         },
-        /* Deep blue — used for cinematic hero overlay & dark sections */
+        /* ink = Ink Black family (dark sections, headings). 950 is the exact brand Ink Black. */
         ink: {
-          800: '#0b1f3a',
-          900: '#081627',
-          950: '#040d18',
+          800: '#0B2A44',
+          900: '#061B33',
+          950: '#021225',
         },
-        /* Emerald/mint accent (was teal) — navy + emerald palette */
+        /* secondary = mint / emerald-turquoise accent (badges, highlights). 200 is Tea Green. */
         secondary: {
-          50:  '#ecfdf5',
-          100: '#d1fae5',
-          200: '#a7f3d0',
-          300: '#6ee7b7',
-          400: '#34d399',
-          500: '#10b981',
-          600: '#059669',
-          700: '#047857',
-          800: '#065f46',
-          900: '#064e3b',
+          50:  '#EEFCF6',
+          100: '#D3F8E8',
+          200: '#CAFFDE',
+          300: '#8EEBCB',
+          400: '#4ED6B4',
+          500: '#1FB89C',
+          600: '#179882',
+          700: '#15786A',
+          800: '#145F56',
+          900: '#124E48',
         },
       },
       keyframes: {

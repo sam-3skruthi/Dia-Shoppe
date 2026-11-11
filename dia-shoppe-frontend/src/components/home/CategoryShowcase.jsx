@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import CircularCarousel from '../ui/CircularCarousel'
 import { LiquidButton } from '../ui/buttons'
-import DsBackdrop from './DsBackdrop'
+import DsPair from './DsPair'
 import { useReveal } from '../../lib/useReveal'
 import { useNarrow } from '../../lib/useNarrow'
 import { scrollToEl } from '../../lib/smoothScroll'
@@ -14,7 +14,7 @@ import { scrollToEl } from '../../lib/smoothScroll'
   that category's details, a Shop Now action and its products in a freshly
   shuffled ring. With fewer than four products the panel shows plain product
   cards instead of a ring (a ring of one or two looks wrong, and we never pad
-  with invented or duplicated products). The glass D + S float behind it all.
+  with invented or duplicated products). The glass D + S sit behind it as one static, compact pair.
 */
 const shuffle = (list) => {
   const a = [...list]
@@ -140,8 +140,10 @@ function CategoryPanel({ cat, products, onClose, panelRef }) {
 export default function CategoryShowcase({ categories, products }) {
   const rootRef = useRef(null)
   const panelRef = useRef(null)
-  const narrow = useNarrow()
+  const phone = useNarrow(640)
+  const tablet = useNarrow(1024)
   const [selected, setSelected] = useState(null)   // { slug, products }
+  const [active, setActive] = useState(0)
   useReveal(rootRef)
 
   const select = useCallback((slug) => {
@@ -153,36 +155,60 @@ export default function CategoryShowcase({ categories, products }) {
   const items = categories.map((c) => ({
     src: `/categories/${c.slug}.jpg`, alt: c.label, title: c.label, subtitle: c.desc, slug: c.slug,
   }))
+  const focused = categories[active] || categories[0]
   const current = selected && categories.find((c) => c.slug === selected.slug)
+  const count = (slug) => products.filter((p) => p.category === slug).length
 
   return (
-    <section ref={rootRef} id="categories" className="dia-aurora dia-grain relative isolate overflow-hidden py-20 sm:py-28">
-      <DsBackdrop />
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div data-reveal className="mx-auto mb-10 max-w-2xl text-center">
-          <span className="dia-label inline-block rounded-full border border-dia-cyan/25 bg-white/60 px-3 py-1 backdrop-blur">Categories</span>
+    <section ref={rootRef} id="categories" className="relative overflow-hidden py-20 sm:py-24">
+      {/* static glass D + S, together. Wide screens: top-right, clear of the
+          heading. Smaller screens: lower corner, behind the category pills,
+          so it never sits over the heading or the cards' captions. */}
+      <DsPair
+        className="absolute bottom-2 left-[-12%] w-[58vw] sm:bottom-6 sm:left-auto sm:right-[-6%] sm:w-[40vw] xl:bottom-auto xl:right-[-3%] xl:top-6 xl:w-[24vw] xl:max-w-[520px]"
+        opacity={phone ? 0.32 : 0.5}
+      />
+      <div className="relative z-10 mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
+        <div data-reveal className="mx-auto mb-4 max-w-2xl text-center">
+          <span className="dia-label inline-block rounded-full border border-dia-cyan/25 bg-white/70 px-3 py-1 backdrop-blur">Categories</span>
           <h2 className="mt-4 font-heading text-4xl font-extrabold text-dia-ink sm:text-5xl">Shop by Category</h2>
           <p className="mt-3 text-lg text-dia-ink/65">Find exactly what you need from our wide range. Pick a category to see what is inside.</p>
         </div>
 
-        <div data-reveal data-reveal-delay="0.1" className="h-[400px] text-dia-ink sm:h-[500px]">
+        {/* large ring: the front card dominates, neighbours stay visible on both sides */}
+        <div data-reveal data-reveal-delay="0.1" className="h-[440px] text-dia-ink sm:h-[600px] lg:h-[760px]">
           <CircularCarousel
             items={items}
             preset="cylinder"
             intro="rise"
-            cardWidth={narrow ? 150 : 220}
-            aspectRatio={1}
-            speed={14}
-            captions
-            cornerRadius={18}
-            depthFade={0.5}
-            innerShade={0.55}
+            cardWidth={phone ? 220 : tablet ? 320 : 430}
+            aspectRatio={0.82}
+            gap={phone ? 18 : 28}
+            perspective={phone ? 1100 : 1700}
+            speed={12}
+            cornerRadius={22}
+            depthFade={0.55}
+            innerShade={0.5}
             ariaLabel="Product categories"
+            onChange={setActive}
             onItemClick={(item) => select(item.slug)}
           />
         </div>
 
-        <div data-reveal className="mx-auto mt-4 flex max-w-3xl flex-wrap justify-center gap-2" role="group" aria-label="Choose a category">
+        {/* caption for the card in front, large and actionable */}
+        {focused && (
+          <div className="mx-auto -mt-2 flex max-w-xl flex-col items-center gap-3 text-center" aria-live="polite">
+            <div key={focused.slug} className="animate-fade-up">
+              <h3 className="font-heading text-2xl font-extrabold text-dia-ink sm:text-3xl">{focused.label}</h3>
+              <p className="mt-1 text-dia-ink/65">{focused.desc}</p>
+            </div>
+            <LiquidButton type="button" size="sm" variant="accent" onClick={() => select(focused.slug)}>
+              Explore {focused.label}{count(focused.slug) ? ` · ${count(focused.slug)}` : ''}
+            </LiquidButton>
+          </div>
+        )}
+
+        <div data-reveal className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-2" role="group" aria-label="Choose a category">
           {categories.map((c) => (
             <button
               key={c.slug}

@@ -67,7 +67,7 @@ export default function CartSaleStrip() {
                 </span>
                 <span className="flex items-baseline gap-2">
                   <span className="font-bold text-secondary-300">₹{p.price.toLocaleString('en-IN')}</span>
-                  <span className="text-xs text-blue-100/50 line-through">₹{p.originalPrice.toLocaleString('en-IN')}</span>
+                  <span className="text-xs text-dia-mint/50 line-through">₹{p.originalPrice.toLocaleString('en-IN')}</span>
                   {off > 0 && (
                     <span className="rounded-full bg-secondary-400 px-1.5 py-0.5 text-[10px] font-bold text-ink-950">{off}% OFF</span>
                   )}

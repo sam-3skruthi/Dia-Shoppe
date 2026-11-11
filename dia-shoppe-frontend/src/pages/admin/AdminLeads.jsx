@@ -164,7 +164,7 @@ export default function AdminLeads() {
         <div className="relative ml-auto">
           <FiSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, phone…"
-            className="bg-white border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary-500/30" />
+            className="bg-white border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary-300/30" />
         </div>
       </div>
 

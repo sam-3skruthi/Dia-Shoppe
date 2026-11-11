@@ -304,7 +304,7 @@ export async function createGlassScene({ canvas, mobile = false, forceGL = false
     baseDy = aspect < 0.8 ? 0.44 : 0.4
     place(1)
     const needW = (baseDx + PW / 2) * 2 * 1.2
-    const needH = (baseDy + PH / 2) * 2 * 1.45
+    const needH = (baseDy + PH / 2) * 2 * 1.22   // no wordmark: the pair is the whole composition
     const tanH = Math.tan((FOV * Math.PI) / 360)
     fitDist = Math.max(needH / (2 * tanH), needW / (2 * tanH * aspect))
   }
@@ -340,7 +340,7 @@ export async function createGlassScene({ canvas, mobile = false, forceGL = false
     const e = st.cam
     const dist = fitDist * (1 + 0.55 * (1 - e))
     camera.position.set(-1.1 * (1 - e), 0.18 - 0.38 * (1 - e), dist)
-    camera.lookAt(0, (aspect < 0.8 ? -0.14 : -0.34) + 0.2 * (1 - e), 0)
+    camera.lookAt(0, -0.04 + 0.12 * (1 - e), 0)   // pair centred on screen
     camera.rotation.z += 0.035 * (1 - e)
     renderer.render(scene, camera)
   }

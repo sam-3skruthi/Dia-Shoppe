@@ -63,10 +63,10 @@ export default function CinematicHero({ start = true }) {
 
           <h1 className="font-display font-semibold leading-[1.05] tracking-tight text-4xl sm:text-5xl lg:text-[4.25rem] mb-6">
             Healthcare equipment,<br />
-            <span className="italic text-secondary-300">designed around you</span>
+            <span className="text-secondary-300">designed around you</span>
           </h1>
 
-          <p className="text-blue-100/90 text-base sm:text-lg mb-9 max-w-xl mx-auto leading-relaxed">
+          <p className="text-dia-mint/90 text-base sm:text-lg mb-9 max-w-xl mx-auto leading-relaxed">
             Authentic glucose &amp; BP monitors, respiratory and hospital
             equipment from the brands you trust — delivered across India,
             fast and reliably.

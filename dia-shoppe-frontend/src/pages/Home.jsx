@@ -38,7 +38,7 @@ const testimonials = [
 
 /* Reserves each section's height while its chunk loads (no layout jump). */
 function SectionFallback({ className = 'min-h-[640px]' }) {
-  return <div className={`${className} bg-dia-mint`} aria-hidden="true" />
+  return <div className={className} aria-hidden="true" />
 }
 
 /* ── Page ─────────────────────────────────────── */
@@ -92,7 +92,7 @@ export default function Home() {
       )}
 
       {/* ── Trust Bar ── */}
-      <div className="bg-dia-mint pb-2 pt-10">
+      <div className="pb-2 pt-10">
         <Reveal className="mx-auto flex max-w-7xl flex-wrap justify-center gap-x-8 gap-y-3 px-4 text-sm font-medium text-dia-ink/80">
           <span className="flex items-center gap-1.5"><FiShield size={16} className="text-dia-cyan" /> 100% Authentic Products</span>
           <span className="flex items-center gap-1.5"><FiAward size={16} className="text-dia-cyan" /> Trusted Brand Partners</span>
@@ -101,7 +101,7 @@ export default function Home() {
       </div>
 
       {/* ── Shop by Category — circular carousel + category panel ── */}
-      <Suspense fallback={<SectionFallback className="min-h-[760px]" />}>
+      <Suspense fallback={<SectionFallback className="min-h-[1000px]" />}>
         <CategoryShowcase categories={categories} products={products} />
       </Suspense>
 
@@ -109,7 +109,7 @@ export default function Home() {
       <SaleRibbonX />
 
       {/* ── Featured Products — depth carousel ── */}
-      <Suspense fallback={<SectionFallback className="min-h-[700px] bg-white" />}>
+      <Suspense fallback={<SectionFallback className="min-h-[700px]" />}>
         <FeaturedDepth products={products} />
       </Suspense>
 

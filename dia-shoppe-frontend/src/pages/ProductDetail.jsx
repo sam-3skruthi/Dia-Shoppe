@@ -329,7 +329,7 @@ export default function ProductDetail() {
               <dl className="divide-y divide-white/10">
                 {specs.map((s) => (
                   <div key={s.k} className="flex justify-between gap-4 py-3">
-                    <dt className="text-sm text-blue-100/70 shrink-0">{s.k}</dt>
+                    <dt className="text-sm text-dia-mint/70 shrink-0">{s.k}</dt>
                     <dd className="text-sm font-medium text-white text-right">{s.v}</dd>
                   </div>
                 ))}

@@ -54,7 +54,7 @@ export default function TestimonialsFlip({ testimonials }) {
   useReveal(rootRef)
 
   return (
-    <section ref={rootRef} id="testimonials" className="dia-aurora dia-grain relative isolate overflow-hidden py-20 sm:py-28">
+    <section ref={rootRef} id="testimonials" className="relative overflow-hidden py-20 sm:py-28">
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div data-reveal className="mx-auto mb-12 max-w-2xl text-center">
           <span className="dia-label inline-block rounded-full border border-dia-cyan/25 bg-white/60 px-3 py-1 backdrop-blur">Testimonials</span>

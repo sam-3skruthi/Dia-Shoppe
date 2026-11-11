@@ -94,11 +94,11 @@ export default function Cart() {
         <PageBackdrop />
         <Header />
         <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-32">
-          <div className="w-20 h-20 rounded-full bg-white/10 border border-white/15 flex items-center justify-center mb-5">
-            <FiShoppingCart size={34} className="text-secondary-300" />
+          <div className="w-20 h-20 rounded-full bg-white/80 border border-primary-200 flex items-center justify-center mb-5">
+            <FiShoppingCart size={34} className="text-primary-700" />
           </div>
-          <h1 className="font-display text-3xl font-semibold text-white mb-2">My cart is empty</h1>
-          <p className="text-blue-100/80 mb-6 max-w-sm">Looks like you haven’t added anything yet. Explore our authentic medical equipment and find what you need.</p>
+          <h1 className="font-display text-3xl font-semibold text-dia-ink mb-2">My cart is empty</h1>
+          <p className="text-dia-ink/65 mb-6 max-w-sm">Looks like you haven’t added anything yet. Explore our authentic medical equipment and find what you need.</p>
           <Link to="/products" className="inline-flex items-center gap-2 bg-secondary-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-secondary-600 transition-colors">
             <FiArrowLeft size={18} /> Start shopping
           </Link>
@@ -116,11 +116,11 @@ export default function Cart() {
       <Header />
 
       {/* header band — transparent, sits on the page backdrop */}
-      <section className="relative text-white">
+      <section className="relative text-dia-ink">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <Reveal>
             <h1 className="font-display text-3xl sm:text-4xl font-semibold leading-tight">My Cart</h1>
-            <p className="text-blue-100/85 mt-2">{count} {count === 1 ? 'item' : 'items'} ready for checkout</p>
+            <p className="text-dia-ink/65 mt-2">{count} {count === 1 ? 'item' : 'items'} ready for checkout</p>
           </Reveal>
         </div>
       </section>
@@ -133,8 +133,8 @@ export default function Cart() {
           {/* items */}
           <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-xl font-semibold text-white">Items</h2>
-              <button onClick={clear} className="text-sm text-blue-100/70 hover:text-white transition-colors">Clear cart</button>
+              <h2 className="font-display text-xl font-semibold text-dia-ink">Items</h2>
+              <button onClick={clear} className="text-sm text-dia-ink/65 hover:text-primary-700 transition-colors">Clear cart</button>
             </div>
             <Stagger className="space-y-4">
               {items.map((item) => (
@@ -142,7 +142,7 @@ export default function Cart() {
               ))}
             </Stagger>
 
-            <Link to="/products" className="inline-flex items-center gap-2 text-secondary-200 font-semibold text-sm hover:text-white transition-colors mt-6">
+            <Link to="/products" className="inline-flex items-center gap-2 text-primary-700 font-semibold text-sm hover:text-ink-950 transition-colors mt-6">
               <FiArrowLeft size={16} /> Continue shopping
             </Link>
           </div>

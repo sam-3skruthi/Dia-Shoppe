@@ -1,10 +1,18 @@
 import { Link } from 'react-router-dom'
 import { business } from '../data/business'
 import { FiPhone, FiMail, FiMapPin, FiFacebook, FiInstagram, FiTwitter } from 'react-icons/fi'
+import { social, isLink } from '../data/social'
+
+// Only confirmed profile URLs (src/data/social.js) are shown — no placeholder '#' links.
+const SOCIAL_LINKS = [
+  ['instagram', 'Instagram', FiInstagram],
+  ['facebook', 'Facebook', FiFacebook],
+  ['twitter', 'Twitter', FiTwitter],
+].filter(([key]) => isLink(social[key]?.url))
 
 export default function Footer() {
   return (
-    <footer id="contact" className="relative overflow-hidden bg-black text-gray-300 pt-16">
+    <footer id="contact" className="relative overflow-hidden bg-gradient-to-b from-ink-950 via-primary-950 to-ink-950 text-dia-mint/80 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
@@ -15,17 +23,21 @@ export default function Footer() {
               </div>
               <div>
                 <div className="text-white font-bold">Dia Shoppe</div>
-                <div className="text-xs text-gray-400">Surgical Distributors</div>
+                <div className="text-xs text-dia-mint/60">Surgical Distributors</div>
               </div>
             </div>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-dia-mint/60 mb-4">
               Trusted medical equipment distributor since 2004. Serving hospitals, clinics and individuals across India.
             </p>
-            <div className="flex gap-3">
-              <a href="#" className="text-gray-400 hover:text-primary-400 transition-colors"><FiFacebook size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-primary-400 transition-colors"><FiInstagram size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-primary-400 transition-colors"><FiTwitter size={20} /></a>
-            </div>
+            {SOCIAL_LINKS.length > 0 && (
+              <div className="flex gap-3">
+                {SOCIAL_LINKS.map(([key, label, Icon]) => (
+                  <a key={key} href={social[key].url.trim()} target="_blank" rel="noopener noreferrer" aria-label={`${label} (opens in a new tab)`} className="text-dia-mint/60 hover:text-dia-aqua transition-colors">
+                    <Icon size={20} />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Quick Links */}
@@ -72,15 +84,15 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-gray-800 py-4 px-4">
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-gray-500 mb-2">
+      <div className="border-t border-white/10 py-4 px-4">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-dia-mint/50 mb-2">
           <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
           <span aria-hidden="true">|</span>
           <Link to="/terms" className="hover:text-white transition-colors">Terms &amp; Conditions</Link>
           <span aria-hidden="true">|</span>
           <Link to="/refunds" className="hover:text-white transition-colors">Shipping, Returns &amp; Refunds</Link>
         </div>
-        <div className="text-center text-xs text-gray-500">
+        <div className="text-center text-xs text-dia-mint/50">
           © {new Date().getFullYear()} Dia Shoppe Surgical Distributors. All rights reserved. &nbsp;|&nbsp; Trusted since 2004
         </div>
       </div>

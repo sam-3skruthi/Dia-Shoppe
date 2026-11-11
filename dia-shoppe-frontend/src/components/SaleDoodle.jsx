@@ -51,7 +51,7 @@ export default function SaleDoodle() {
         ))}
       </div>
 
-      <span className="relative mt-3 text-sm text-blue-100/75">Big savings across the store</span>
+      <span className="relative mt-3 text-sm text-dia-mint/75">Big savings across the store</span>
     </div>
   )
 }

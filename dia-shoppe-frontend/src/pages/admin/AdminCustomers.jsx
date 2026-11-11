@@ -82,7 +82,7 @@ export default function AdminCustomers() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search name, email or phone…"
-          className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+          className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300/30 focus:border-primary-500"
         />
       </div>
 
