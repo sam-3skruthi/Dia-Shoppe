@@ -79,7 +79,7 @@ export default function Home() {
         {/* ── Cinematic Hero — unrolls top→down like a window blind on entry ── */}
         <motion.div
           initial={{ clipPath: 'inset(0 0 100% 0)' }}
-          animate={{ clipPath: 'inset(0 0 0% 0)' }}
+          animate={{ clipPath: 'inset(0 0 0% 0)', transitionEnd: { clipPath: 'none' } }}   // no leftover clip layer once unrolled
           transition={{ duration: 1.05, ease: [0.22, 1, 0.36, 1] }}
         >
           <CinematicHero start={introDone} />

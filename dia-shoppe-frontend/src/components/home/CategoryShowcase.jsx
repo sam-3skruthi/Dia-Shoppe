@@ -161,12 +161,12 @@ export default function CategoryShowcase({ categories, products }) {
 
   return (
     <section ref={rootRef} id="categories" className="relative overflow-hidden py-20 sm:py-24">
-      {/* static glass D + S, together. Wide screens: top-right, clear of the
-          heading. Smaller screens: lower corner, behind the category pills,
-          so it never sits over the heading or the cards' captions. */}
+      {/* the glass D + S: together, huge, centred behind the carousel, and
+          completely still. Centred with margins (not a transform) so the glass
+          blends with the page background behind it. */}
       <DsPair
-        className="absolute bottom-2 left-[-12%] w-[58vw] sm:bottom-6 sm:left-auto sm:right-[-6%] sm:w-[40vw] xl:bottom-auto xl:right-[-3%] xl:top-6 xl:w-[24vw] xl:max-w-[520px]"
-        opacity={phone ? 0.32 : 0.5}
+        className="absolute left-[-12vw] top-[330px] w-[124vw] sm:inset-x-0 sm:left-auto sm:top-[250px] sm:mx-auto sm:w-[92vw] lg:top-[235px] lg:w-[min(76vw,1060px)]"
+        opacity={phone ? 0.45 : 0.6}
       />
       <div className="relative z-10 mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
         <div data-reveal className="mx-auto mb-4 max-w-2xl text-center">
