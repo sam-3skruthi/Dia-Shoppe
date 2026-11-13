@@ -11,8 +11,8 @@ import { FaInstagram, FaFacebookF } from 'react-icons/fa'
 */
 
 const PLATFORMS = {
-  instagram: { label: 'Instagram', icon: FaInstagram, color: '#E1306C', bg: 'from-[#F58529] via-[#DD2A7B] to-[#8134AF]' },
-  facebook: { label: 'Facebook', icon: FaFacebookF, color: '#1877F2', bg: 'from-[#1877F2] to-[#0A4DA6]' },
+  instagram: { label: 'Instagram', icon: FaInstagram, color: '#0277BD', bg: 'from-[#90E0EF] via-[#00B4D8] to-[#02629C]' },
+  facebook: { label: 'Facebook', icon: FaFacebookF, color: '#0277BD', bg: 'from-[#0277BD] to-[#0277BD]' },
 }
 
 function ConnectCard({ platform, account }) {

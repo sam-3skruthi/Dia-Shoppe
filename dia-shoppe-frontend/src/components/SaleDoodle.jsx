@@ -31,7 +31,7 @@ export default function SaleDoodle() {
           <motion.span
             key={ch}
             className="font-doodle text-7xl sm:text-8xl leading-none text-white"
-            style={{ display: 'inline-block', transformOrigin: 'center bottom', textShadow: '0 4px 18px rgba(16,185,129,0.35)' }}
+            style={{ display: 'inline-block', transformOrigin: 'center bottom', textShadow: '0 4px 18px rgba(0,180,216,0.35)' }}
             initial={reduce ? false : { y: -140, opacity: 0, rotate: -8 }}
             animate={
               reduce

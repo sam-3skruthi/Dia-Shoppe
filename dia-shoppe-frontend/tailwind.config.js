@@ -1,4 +1,23 @@
 /** @type {import('tailwindcss').Config} */
+/* Palette-derived scales (see PALETTE LOCK below). */
+const BLUE_GREY = {
+  50: '#EAF6FA', 100: '#DCEFF5', 200: '#C3E2EC', 300: '#9CC7D8', 400: '#6E9FB5',
+  500: '#4E7F98', 600: '#3A6680', 700: '#284F68', 800: '#173A52', 900: '#0B2A44', 950: '#021225',
+}
+const BLUE_SCALE = {
+  50: '#E0F7FA', 100: '#CAF0F8', 200: '#90E0EF', 300: '#5FD0E8', 400: '#00B4D8',
+  500: '#0096C7', 600: '#0277BD', 700: '#02629C', 800: '#054F7E', 900: '#06304D', 950: '#021225',
+}
+const SKY_SCALE = {
+  50: '#F0FBFD', 100: '#E0F7FA', 200: '#CAF0F8', 300: '#90E0EF', 400: '#48CAE4',
+  500: '#00B4D8', 600: '#0096C7', 700: '#0277BD', 800: '#02629C', 900: '#054F7E', 950: '#06304D',
+}
+// former reds/pinks (errors, sale, delete): the strongest blues so they still stand out
+const DEEP_SCALE = {
+  50: '#E0F7FA', 100: '#CAF0F8', 200: '#90E0EF', 300: '#48CAE4', 400: '#0288D1',
+  500: '#0277BD', 600: '#02629C', 700: '#054F7E', 800: '#06304D', 900: '#021225', 950: '#021225',
+}
+
 export default {
   content: [
     "./index.html",
@@ -22,58 +41,71 @@ export default {
         tech: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
+        /* ── PALETTE LOCK (Nov 2026) ──────────────────────────────────────
+           The owner wants ONLY the Dolphin Dive palette on screen. Rather than
+           hunt every class, Tailwind's built-in colour families are redefined
+           here as scales derived from the palette, so any gray-*, green-*,
+           amber-*, red-*, white, black ... class anywhere in the app (store
+           and admin) renders in palette colours.
+             Deep Blue #0277BD · Electric Blue #00B4D8 · Light Sky #90E0EF
+             Icy Pale #E0F7FA · Ink #021225 (text / darkest)               */
+        white: '#E0F7FA',
+        black: '#021225',
+        gray: BLUE_GREY, slate: BLUE_GREY, zinc: BLUE_GREY, neutral: BLUE_GREY, stone: BLUE_GREY,
+        green: BLUE_SCALE, emerald: BLUE_SCALE, teal: BLUE_SCALE, lime: BLUE_SCALE,
+        cyan: SKY_SCALE, sky: SKY_SCALE, amber: SKY_SCALE, yellow: SKY_SCALE, orange: SKY_SCALE,
+        blue: BLUE_SCALE, indigo: BLUE_SCALE, violet: BLUE_SCALE, purple: BLUE_SCALE,
+        red: DEEP_SCALE, rose: DEEP_SCALE, pink: DEEP_SCALE, fuchsia: DEEP_SCALE,
         /* ── Diashoppe revamp palette (approved brand foundation) ──
            Namespaced under `dia` so it never collides with the legacy
            primary / ink / secondary scales still used by other pages. */
         dia: {
-          mint: '#F2FFF6',   // Mint Cream — main light surface
-          tea: '#CAFFDE',    // Tea Green — soft highlight surface
-          aqua: '#25C5E9',   // Sky Aqua — action / light accent
-          cyan: '#238689',   // Dark Cyan — accent text & icons
-          ink: '#021225',    // Ink Black — headings, dark sections
-          /* Atmospheric accents (aurora) — proposed, pending your sign-off */
-          emerald: '#1FB98A',
-          turquoise: '#2CD3C2',
-          pale: '#BDF1F8',   // pale aqua
-          violet: '#6B5BD6', // used only as a faint shadow tint
+          /* Dolphin Dive palette (approved Nov 2026). Token NAMES are kept so
+             every existing class follows the new colours automatically. */
+          mint: '#E0F7FA',   // Icy Pale Blue - main light surface
+          tea: '#90E0EF',    // Light Sky Blue - soft highlight surface
+          aqua: '#00B4D8',   // Electric Blue - action / light accent
+          cyan: '#0277BD',   // Deep Blue - accent text, icons, buttons
+          ink: '#021225',    // Ink - headings, dark sections (unchanged)
+          /* atmospheric accents */
+          emerald: '#0096C7',
+          turquoise: '#48CAE4',
+          pale: '#CAF0F8',
+          violet: '#0277BD', // former violet shadow tint, now deep blue
         },
-        /* ── Legacy scale names, remapped to the Diashoppe brand ──
-           Every page already styles itself with primary / secondary / ink /
-           canvas, so remapping them here moves the whole app (storefront,
-           auth, cart, orders, admin) onto one palette without touching logic. */
-        canvas: '#F2FFF6',            // Mint Cream
-        /* primary = Dark Cyan family (buttons, links, focus). 700 is the exact brand Dark Cyan. */
+        canvas: '#E0F7FA',            // Icy Pale Blue
+        /* primary = Deep Blue family (buttons, links, focus). 700 is the exact Deep Blue. */
         primary: {
-          50:  '#F0FBFA',
-          100: '#DDF5F3',
-          200: '#B7E9E7',
-          300: '#86D6D5',
-          400: '#55BFC0',
-          500: '#33A5A8',
-          600: '#2A9598',
-          700: '#238689',
-          800: '#1D6F72',
-          900: '#18595C',
-          950: '#0E3A3E',
+          50:  '#EEF8FD',
+          100: '#D6EEFA',
+          200: '#ADDCF3',
+          300: '#7CC6EA',
+          400: '#42A9DD',
+          500: '#1590CF',
+          600: '#0284C7',
+          700: '#0277BD',
+          800: '#02629C',
+          900: '#054F7E',
+          950: '#06304D',
         },
-        /* ink = Ink Black family (dark sections, headings). 950 is the exact brand Ink Black. */
+        /* ink = dark navy family (dark sections, headings). */
         ink: {
           800: '#0B2A44',
           900: '#061B33',
           950: '#021225',
         },
-        /* secondary = mint / emerald-turquoise accent (badges, highlights). 200 is Tea Green. */
+        /* secondary = sky / electric-blue accent (badges, highlights). 200 is Light Sky Blue. */
         secondary: {
-          50:  '#EEFCF6',
-          100: '#D3F8E8',
-          200: '#CAFFDE',
-          300: '#8EEBCB',
-          400: '#4ED6B4',
-          500: '#1FB89C',
-          600: '#179882',
-          700: '#15786A',
-          800: '#145F56',
-          900: '#124E48',
+          50:  '#F0FBFD',
+          100: '#E0F7FA',
+          200: '#90E0EF',
+          300: '#6CD3EA',
+          400: '#33C3E2',
+          500: '#00B4D8',
+          600: '#0096B8',
+          700: '#077894',
+          800: '#0B5F75',
+          900: '#0D4E60',
         },
       },
       keyframes: {

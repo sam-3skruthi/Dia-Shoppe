@@ -10,14 +10,14 @@ import { FaInstagram, FaFacebookF, FaGoogle, FaWhatsapp, FaYoutube } from 'react
 
 // channel icon + colour for the "where leads come from" display
 const SOURCE_META = {
-  Instagram: { icon: FaInstagram, color: '#E1306C' },
-  Facebook: { icon: FaFacebookF, color: '#1877F2' },
-  Google: { icon: FaGoogle, color: '#4285F4' },
-  WhatsApp: { icon: FaWhatsapp, color: '#25D366' },
-  YouTube: { icon: FaYoutube, color: '#FF0000' },
-  Direct: { icon: FiCompass, color: '#64748b' },
+  Instagram: { icon: FaInstagram, color: '#0277BD' },
+  Facebook: { icon: FaFacebookF, color: '#0277BD' },
+  Google: { icon: FaGoogle, color: '#0288D1' },
+  WhatsApp: { icon: FaWhatsapp, color: '#00B4D8' },
+  YouTube: { icon: FaYoutube, color: '#0277BD' },
+  Direct: { icon: FiCompass, color: '#4E7F98' },
 }
-const sourceMeta = (s) => SOURCE_META[s] || { icon: FiCompass, color: '#64748b' }
+const sourceMeta = (s) => SOURCE_META[s] || { icon: FiCompass, color: '#4E7F98' }
 
 /*
   Leads = customers with an open cart who haven't checked out. Abandoned carts

@@ -2,18 +2,17 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { Reveal, motion } from '../components/motion'
+import { motion } from '../components/motion'
 import CinematicHero from '../components/CinematicHero'
 import DiaLoader from '../components/loader/DiaLoader'
 import { shouldPlayLoader } from '../lib/loaderSession'
 import { useSmoothScroll } from '../lib/smoothScroll'
-import { LiquidGlassDefs } from '../components/ui/buttons'
 import BrandMarquee from '../components/BrandMarquee'
 import SaleBanner from '../components/SaleBanner'
 import SaleRibbonX from '../components/SaleRibbonX'
 import { categories } from '../data/products'
 import { useCatalog } from '../context/CatalogContext'
-import { FiShield, FiAward, FiHeadphones } from 'react-icons/fi'
+import CurvedLoop from '../components/bits/CurvedLoop'
 
 // Below-the-fold sections are separate chunks, so GSAP and the carousels stay
 // out of the main bundle and load right after the page is interactive.
@@ -35,6 +34,9 @@ const testimonials = [
   { name: 'CityCare Clinic',   role: 'Clinic Partner, Delhi NCR',     text: 'Consistent stock, honest pricing and quick replacements when needed. Exactly what a busy clinic wants from a supplier.', rating: 5 },
   { name: 'Anil Verma',        role: 'Customer, Mumbai',              text: 'Bought a nebulizer for my father. Original Philips unit, sealed box, delivered fast. Highly recommended.', rating: 4 },
 ]
+
+/* Trust promises — all already stated elsewhere on the site (no new claims). */
+const TRUST = ['100% Authentic Products', 'Trusted Brand Partners', 'Expert Support Available', 'Since 2004', 'Delivered Across India']
 
 /* Reserves each section's height while its chunk loads (no layout jump). */
 function SectionFallback({ className = 'min-h-[640px]' }) {
@@ -68,7 +70,6 @@ export default function Home() {
 
   return (
     <div className="dia-theme min-h-screen">
-      <LiquidGlassDefs />
       {/* White top strip with the brand logos */}
       <BrandMarquee />
       <SaleBanner />
@@ -91,14 +92,26 @@ export default function Home() {
         <DiaLoader onReveal={() => setIntroDone(true)} onDone={() => setLoaderOn(false)} />
       )}
 
-      {/* ── Trust Bar ── */}
-      <div className="pb-2 pt-10">
-        <Reveal className="mx-auto flex max-w-7xl flex-wrap justify-center gap-x-8 gap-y-3 px-4 text-sm font-medium text-dia-ink/80">
-          <span className="flex items-center gap-1.5"><FiShield size={16} className="text-dia-cyan" /> 100% Authentic Products</span>
-          <span className="flex items-center gap-1.5"><FiAward size={16} className="text-dia-cyan" /> Trusted Brand Partners</span>
-          <span className="flex items-center gap-1.5"><FiHeadphones size={16} className="text-dia-cyan" /> Expert Support Available</span>
-        </Reveal>
-      </div>
+      {/* ── Trust loop — the trust promises on a curved, draggable marquee ── */}
+      <section aria-label="Why Dia Shoppe" className="relative pt-6 text-dia-cyan">
+        <p className="sr-only">{TRUST.join('. ')}.</p>
+        <div aria-hidden="true">
+          <CurvedLoop
+            marqueeText={TRUST.join(' ✦ ') + ' ✦'}
+            shape="arc"
+            speed={1.4}
+            curveAmount={140}
+            direction="left"
+            fontSize={58}
+            fontWeight={800}
+            letterSpacing={1}
+            scrollBoost={0.6}
+            edgeFade={0.2}
+            separatorColor="#00B4D8"
+            className="font-heading"
+          />
+        </div>
+      </section>
 
       {/* ── Shop by Category — circular carousel + category panel ── */}
       <Suspense fallback={<SectionFallback className="min-h-[1000px]" />}>
@@ -108,7 +121,7 @@ export default function Home() {
       {/* ── Sale ribbon (X) — only shows while the sale design is on ── */}
       <SaleRibbonX />
 
-      {/* ── Featured Products — depth carousel ── */}
+      {/* ── Featured Products — circular gallery ── */}
       <Suspense fallback={<SectionFallback className="min-h-[700px]" />}>
         <FeaturedDepth products={products} />
       </Suspense>

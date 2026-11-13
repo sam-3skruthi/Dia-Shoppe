@@ -32,6 +32,7 @@ const FlipCard = ({
   onFlipChange,
   axis = "y",
   flipOnClick = true,
+  flipOnHover = false,
   draggable = true,
   dragDistance = 0,
   tilt = true,
@@ -45,10 +46,10 @@ const FlipCard = ({
   width = 300,
   height = 400,
   radius = 22,
-  background = "#27272a",
-  color = "#f5f5f5",
+  background = "#021225",
+  color = "#E0F7FA",
   shadow = true,
-  shadowColor = "#000000",
+  shadowColor = "#021225",
   shadowOpacity = 0.45,
   disabled = false,
   ariaLabel = "Flip card",
@@ -95,6 +96,10 @@ const FlipCard = ({
   const flip = (instant) => {
     const base = snap(turn.get());
     settle(isBack(base) ? base - 180 : base + 180, 0, instant);
+  };
+  // hover mode: turn to a given side (no-op when already showing it)
+  const show = (back) => {
+    if (isBack(target.current) !== back) flip(false);
   };
   const rest = () => {
     tiltX.set(0);
@@ -173,7 +178,8 @@ const FlipCard = ({
     setDragging(false);
     if (e.pointerType === "touch" || !rootRef.current?.matches(":hover")) rest();
     if (!g.moved) {
-      if (!cancelled && flipOnClick) flip(false);
+      // with a mouse in hover mode, hovering already flips: a click would just undo it
+      if (!cancelled && flipOnClick && !(flipOnHover && e.pointerType === "mouse")) flip(false);
       else settle(target.current, 0, false);
       return;
     }
@@ -219,10 +225,13 @@ const FlipCard = ({
     onPointerCancel={(e) => release(e, true)}
     onLostPointerCapture={(e) => release(e, true)}
     onPointerEnter={(e) => {
-      if (!reduce && !disabled && e.pointerType !== "touch") lift.set(hoverScale);
+      if (disabled || e.pointerType === "touch") return;
+      if (!reduce) lift.set(hoverScale);
+      if (flipOnHover && !controlled) show(true);
     }}
-    onPointerLeave={() => {
+    onPointerLeave={(e) => {
       if (!grip.current) rest();
+      if (flipOnHover && !controlled && !disabled && e.pointerType !== "touch" && !grip.current) show(false);
     }}
     onKeyDown={onKeyDown}
     onClick={onClick}
@@ -251,7 +260,7 @@ const FlipCard = ({
   >
           {front}
           {glare ? <span
-    className="pointer-events-none absolute inset-0 [opacity:var(--fc-sheen,0)] [background:radial-gradient(circle_farthest-side_at_var(--fc-gx,50%)_var(--fc-gy,50%),rgba(255,255,255,var(--fc-glare))_0%,rgba(255,255,255,calc(var(--fc-glare)*0.76))_12%,rgba(255,255,255,calc(var(--fc-glare)*0.5))_26%,rgba(255,255,255,calc(var(--fc-glare)*0.28))_42%,rgba(255,255,255,calc(var(--fc-glare)*0.12))_60%,rgba(255,255,255,calc(var(--fc-glare)*0.04))_78%,rgba(255,255,255,0)_100%)]"
+    className="pointer-events-none absolute inset-0 [opacity:var(--fc-sheen,0)] [background:radial-gradient(circle_farthest-side_at_var(--fc-gx,50%)_var(--fc-gy,50%),rgba(224,247,250,var(--fc-glare))_0%,rgba(224,247,250,calc(var(--fc-glare)*0.76))_12%,rgba(224,247,250,calc(var(--fc-glare)*0.5))_26%,rgba(224,247,250,calc(var(--fc-glare)*0.28))_42%,rgba(224,247,250,calc(var(--fc-glare)*0.12))_60%,rgba(224,247,250,calc(var(--fc-glare)*0.04))_78%,rgba(224,247,250,0)_100%)]"
     aria-hidden="true"
   /> : null}
         </div>
@@ -262,7 +271,7 @@ const FlipCard = ({
   >
           {back}
           {glare ? <span
-    className="pointer-events-none absolute inset-0 [opacity:var(--fc-sheen,0)] [background:radial-gradient(circle_farthest-side_at_var(--fc-gx,50%)_var(--fc-gy,50%),rgba(255,255,255,var(--fc-glare))_0%,rgba(255,255,255,calc(var(--fc-glare)*0.76))_12%,rgba(255,255,255,calc(var(--fc-glare)*0.5))_26%,rgba(255,255,255,calc(var(--fc-glare)*0.28))_42%,rgba(255,255,255,calc(var(--fc-glare)*0.12))_60%,rgba(255,255,255,calc(var(--fc-glare)*0.04))_78%,rgba(255,255,255,0)_100%)]"
+    className="pointer-events-none absolute inset-0 [opacity:var(--fc-sheen,0)] [background:radial-gradient(circle_farthest-side_at_var(--fc-gx,50%)_var(--fc-gy,50%),rgba(224,247,250,var(--fc-glare))_0%,rgba(224,247,250,calc(var(--fc-glare)*0.76))_12%,rgba(224,247,250,calc(var(--fc-glare)*0.5))_26%,rgba(224,247,250,calc(var(--fc-glare)*0.28))_42%,rgba(224,247,250,calc(var(--fc-glare)*0.12))_60%,rgba(224,247,250,calc(var(--fc-glare)*0.04))_78%,rgba(224,247,250,0)_100%)]"
     aria-hidden="true"
   /> : null}
         </div>

@@ -42,7 +42,7 @@ export async function payForOrder({ orderId, email, name, phone }) {
       name: 'Dia Shoppe',
       description: `Order #${orderId}`,
       prefill: { name, email, contact: phone },
-      theme: { color: '#1d4ed8' },
+      theme: { color: '#0277BD' },
       handler: async (resp) => {
         const { data: v, error: vError } = await supabase.functions.invoke('verify-payment', {
           body: {

@@ -1,40 +1,66 @@
 import { useEffect, useRef } from 'react'
 import { markLoaderSeen } from '../../lib/loaderSession'
-import dMulM from '../../assets/dia/d-mul-m.webp'
-import dAddM from '../../assets/dia/d-add-m.webp'
-import sMulM from '../../assets/dia/s-mul-m.webp'
-import sAddM from '../../assets/dia/s-add-m.webp'
 
 /*
-  Homepage loading animation — CRYSTAL FORMATION × AURORA REVEAL.
+  Homepage loading animation — glass shards re-forming into the D + S monogram.
 
-  Mounted by Home only when the once-per-session gate says so. This file is
-  deliberately light: Three.js (glassScene) and GSAP are loaded with dynamic
-  import(), so neither is in the main bundle and neither loads on later visits.
+  Shows the SAME monogram as the site-wide backdrop (src/lib/dsMonogram.js:
+  script chrome, D above, S hanging from its base), in the same place on
+  screen, so when the veil lifts the page's own monogram continues seamlessly.
 
-  Three presentations of the same sequence:
-    • WebGL   — full 3D scene (default)
-    • CSS     — same letters/aurora as layered images when WebGL is missing,
-                too slow (software GL), fails, or the chunk is slow to load
-    • static  — prefers-reduced-motion: a brief still composition + fade
+  Sequence: the Dolphin Dive aurora fades in → ~1,400 faceted glass shards
+  fly in from all around and settle onto the real surface of the letters (top
+  of the D first, down through the S), melting in as they land while the solid
+  chrome monogram forms behind them → it holds for a moment → the veil lifts
+  upward to reveal the page.
+
+  Mounted by Home only when the once-per-session gate says so. Three.js
+  (via dsMonogram) and GSAP are dynamic imports: neither is in the main bundle.
+    • WebGL           — the sequence above
+    • reduced motion  — the monogram simply appears, holds, then fades
+    • no WebGL / slow — the aurora only, then a quick lift (never block the page)
 
   Any click / key press / Skip button fast-forwards to the lift. Scrolling is
-  locked while the overlay is up. onReveal fires as the veil starts to lift
-  (header brand + hero copy animate in); onDone fires when it is gone.
+  locked while the overlay is up. onReveal fires as the veil starts to lift;
+  onDone fires when it is gone.
 */
 
 const LOAD_TIMEOUT_MS = 3000          // never hold the page for slow assets
-const mintCss = 'bg-dia-mint'
+const MASK_SCALE = 0.5
 const auroraCss =
-  'radial-gradient(60% 50% at 18% 12%, rgba(202,255,222,.95), transparent 70%),' +
-  'radial-gradient(50% 45% at 85% 20%, rgba(37,197,233,.22), transparent 70%),' +
-  'radial-gradient(55% 45% at 70% 95%, rgba(44,211,194,.2), transparent 70%),' +
-  'radial-gradient(40% 35% at 6% 92%, rgba(107,91,214,.08), transparent 70%)'
+  'radial-gradient(60% 50% at 18% 12%, rgba(144,224,239,.95), transparent 70%),' +
+  'radial-gradient(50% 45% at 85% 20%, rgba(0,180,216,.22), transparent 70%),' +
+  'radial-gradient(55% 45% at 70% 95%, rgba(0,180,216,.2), transparent 70%),' +
+  'radial-gradient(40% 35% at 6% 92%, rgba(2,136,209,.08), transparent 70%)'
+
+/* The reveal mask: everything the light has already passed is lit, with a
+   soft leading edge. p = 0 → nothing, p = 1 → everything. The light travels
+   diagonally from the top of the D to the tail of the S. */
+function paintSweep(canvas, p) {
+  const w = Math.max(1, Math.round(window.innerWidth * MASK_SCALE))
+  const h = Math.max(1, Math.round(window.innerHeight * MASK_SCALE))
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h }
+  const g = canvas.getContext('2d')
+  g.clearRect(0, 0, w, h)
+  if (p <= 0) return
+  const edge = 0.22                                   // softness of the leading edge (of the diagonal)
+  const at = -edge + p * (1 + 2 * edge)               // edge position along the diagonal, 0..1
+  // sweep across the monogram's own area (centre of the screen), not the whole
+  // screen, so the letters are forming for the entire sweep
+  const grad = g.createLinearGradient(w * 0.32, h * 0.08, w * 0.68, h * 0.92)
+  const clamp = (v) => Math.min(1, Math.max(0, v))
+  grad.addColorStop(0, 'rgba(0,0,0,1)')
+  grad.addColorStop(clamp(at - edge / 2), 'rgba(0,0,0,1)')
+  grad.addColorStop(clamp(at + edge / 2), 'rgba(0,0,0,0)')
+  grad.addColorStop(1, 'rgba(0,0,0,0)')
+  g.fillStyle = grad
+  g.fillRect(0, 0, w, h)
+}
 
 export default function DiaLoader({ onReveal, onDone }) {
   const rootRef = useRef(null)
   const canvasRef = useRef(null)
-  const cssRef = useRef(null)
+  const auroraRef = useRef(null)
   const cbRef = useRef({ onReveal, onDone })
   useEffect(() => { cbRef.current = { onReveal, onDone } })
 
@@ -42,8 +68,6 @@ export default function DiaLoader({ onReveal, onDone }) {
     markLoaderSeen()
     const root = rootRef.current
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    const mobile = window.innerWidth < 768
-    const dev = import.meta.env.DEV ? new URLSearchParams(window.location.search) : null
     const html = document.documentElement
     const prevOverflow = html.style.overflow
     html.style.overflow = 'hidden'
@@ -52,9 +76,10 @@ export default function DiaLoader({ onReveal, onDone }) {
     let finished = false
     let revealed = false
     let tl = null
-    let scene = null
+    let mono = null
     let gsapRef = null
     let removeInput = () => {}
+    const mask = document.createElement('canvas')
 
     const reveal = () => {
       if (revealed) return
@@ -66,20 +91,9 @@ export default function DiaLoader({ onReveal, onDone }) {
       finished = true
       removeInput()
       html.style.overflow = prevOverflow
-      scene?.dispose()
-      scene = null
+      mono?.dispose()
+      mono = null
       cbRef.current.onDone?.()
-    }
-
-    // Shared tail of every timeline: once the D and S have held for a moment,
-    // the veil lifts upward (clip-path), revealing the page already rendered below.
-    // The loader shows ONLY the glass D and S: no wordmark, name or caption.
-    const addLift = (t, g, liftAt) => {
-      t.addLabel('lift', liftAt)
-      t.call(reveal, null, 'lift')
-      t.to(root, { clipPath: 'inset(0 0 100% 0)', duration: 0.95, ease: 'power3.inOut' }, 'lift')
-      t.call(finish)
-      return g
     }
 
     const bindSkip = (g) => {
@@ -96,49 +110,13 @@ export default function DiaLoader({ onReveal, onDone }) {
       }
     }
 
-    const showCss = () => {
-      canvasRef.current.style.display = 'none'
-      cssRef.current.style.display = 'block'
-    }
-
-    const buildCssTimeline = (g) => {
-      const q = (s) => cssRef.current.querySelectorAll(s)
-      const aur = q('[data-aurora]')
-      tl = g.timeline({ paused: true })
-      if (reduced) {
-        // no motion: letters simply appear, hold briefly, then the veil fades
-        g.set([aur, q('[data-d]'), q('[data-s]')], { opacity: 1 })
-        tl.fromTo(root, { opacity: 0.0 }, { opacity: 1, duration: 0.35 }, 0)
-        tl.addLabel('lift', 1.3)
-        tl.call(reveal, null, 'lift')
-        tl.to(root, { opacity: 0, duration: 0.45 }, 'lift')
-        tl.call(finish)
-        return
-      }
-      tl.fromTo(aur, { opacity: 0, xPercent: -12 }, { opacity: 1, xPercent: 0, duration: 1.6, ease: 'power2.out' }, 0)
-      tl.fromTo(q('[data-d]'), { opacity: 0, y: 46, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 1.3, ease: 'power3.out' }, 0.45)
-      tl.fromTo(q('[data-s]'), { opacity: 0, y: -46, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 1.3, ease: 'power3.out' }, 0.8)
-      // the letters glow softly as the light passes
-      tl.to(q('img[style*="screen"]'), { filter: 'brightness(0.36)', duration: 0.7, ease: 'sine.inOut', yoyo: true, repeat: 1 }, 1.9)
-      addLift(tl, g, 3.0)
-    }
-
-    const buildWebglTimeline = (g, sc) => {
-      const st = { time: 0, aurora: 0, formD: 0, formS: 0, cam: 0, sweep: -0.5, join: 0, glow: 0 }
-      const draw = () => { st.time = tl.time(); sc.draw(st) }
-      tl = g.timeline({ paused: true, onUpdate: draw })
-      tl.to(st, { aurora: 1, duration: 2.8, ease: 'power2.inOut' }, 0)
-      tl.to(st, { formD: 1, duration: 2.0, ease: 'power1.inOut' }, 0.55)
-      tl.to(st, { formS: 1, duration: 2.0, ease: 'power1.inOut' }, 0.95)
-      tl.to(st, { cam: 1, duration: 3.1, ease: 'power3.inOut' }, 0.2)
-      tl.to(st, { join: 1, duration: 1.7, ease: 'power2.inOut' }, 1.9)   // D and S drift together
-      tl.to(st, { sweep: 1.45, duration: 1.5, ease: 'power1.inOut' }, 2.3)
-      // soft glow on the D and S while the light streak crosses them, easing to a gentle afterglow
-      tl.to(st, { glow: 1, duration: 0.9, ease: 'sine.inOut' }, 2.35)
-      tl.to(st, { glow: 0.3, duration: 1.3, ease: 'sine.inOut' }, 3.3)
-      tl.fromTo(canvasRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power1.out' }, 0)
-      addLift(tl, g, 4.0)   // D + S hold briefly after the light sweep, then lift
-      draw()
+    // the veil lifts upward (clip-path), revealing the page already rendered below
+    const addLift = (t, liftAt, fade = false) => {
+      t.addLabel('lift', liftAt)
+      t.call(reveal, null, 'lift')
+      if (fade) t.to(root, { opacity: 0, duration: 0.45 }, 'lift')
+      else t.to(root, { clipPath: 'inset(0 0 100% 0)', duration: 0.95, ease: 'power3.inOut' }, 'lift')
+      t.call(finish)
     }
 
     const run = async () => {
@@ -152,8 +130,7 @@ export default function DiaLoader({ onReveal, onDone }) {
       gsapRef = g
       bindSkip(g)
 
-      // Probe for WebGL first: devices without it skip the 3D chunk entirely
-      // (no download, no console noise) and go straight to the CSS version.
+      // Probe for WebGL before downloading the 3D chunk.
       const hasWebGL = (() => {
         try {
           const c = document.createElement('canvas')
@@ -162,38 +139,52 @@ export default function DiaLoader({ onReveal, onDone }) {
           return Boolean(ctx)
         } catch { return false }
       })()
-      let gl = null
-      if (!reduced && hasWebGL) {
+      if (hasWebGL) {
         const attempt = (async () => {
-          const { createGlassScene } = await import('./glassScene')
-          return createGlassScene({
-            canvas: canvasRef.current, mobile,
-            forceGL: Boolean(dev && dev.get('forcegl')),
-          })
+          const { createMonogramRenderer } = await import('../../lib/dsMonogram')
+          return createMonogramRenderer(canvasRef.current, { shards: window.innerWidth < 768 ? 800 : 1400 })
         })()
-        gl = await Promise.race([
+        mono = await Promise.race([
           attempt.catch(() => null),
           new Promise((r) => setTimeout(() => r(null), LOAD_TIMEOUT_MS)),
         ])
-        // if the scene arrives after the timeout, release it
-        attempt.then((s) => { if (s && s !== gl) s.dispose() }).catch(() => {})
+        attempt.then((m) => { if (m && m !== mono) m.dispose() }).catch(() => {})
       }
-      if (cancelled) { gl?.dispose(); return }
+      if (cancelled) { mono?.dispose(); mono = null; return }
 
-      if (gl) {
-        scene = gl
-        canvasRef.current.addEventListener('dia-gl-lost', () => { if (tl && !finished) { reveal(); tl.progress(1) } })
-        buildWebglTimeline(g, gl)
+      tl = g.timeline({ paused: true })
+      tl.fromTo(auroraRef.current, { opacity: 0, xPercent: -8 }, { opacity: 1, xPercent: 0, duration: 1.4, ease: 'power2.out' }, 0)
+
+      if (mono) {
+        mono.setSize(window.innerWidth, window.innerHeight)
+        const st = { p: reduced ? 1 : 0 }
+        // the solid letters form just behind the arriving shards
+        const solid = (p) => Math.min(1, Math.max(0, (p - 0.28) / 0.72))
+        // (a final timeline update can land after finish() released the renderer)
+        const draw = () => {
+          if (!mono) return
+          mono.setShards(st.p)
+          paintSweep(mask, solid(st.p))
+          mono.setMask(mask)
+          mono.render()
+        }
+        tl.eventCallback('onUpdate', draw)
+        tl.fromTo(canvasRef.current, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'power1.out' }, 0)
+        if (reduced) {
+          addLift(tl, 1.3, true)
+        } else {
+          // shards fly in and re-form the monogram
+          tl.to(st, { p: 1, duration: 2.6, ease: 'power1.inOut' }, 0.35)
+          addLift(tl, 3.6)
+        }
+        draw()
       } else {
-        showCss()
-        buildCssTimeline(g)
+        addLift(tl, reduced ? 0.8 : 1.4, reduced)      // no 3D: aurora only, quick
       }
 
-      const freeze = dev?.get('loaderT')
-      if (freeze != null) {
-        tl.time(parseFloat(freeze), false)    // dev-only: freeze on a frame for review
-        window.__diaSeek = (t) => { tl.time(t, false) }   // dev-only: frame-accurate capture
-        return
+      if (import.meta.env.DEV) {
+        const freeze = new URLSearchParams(window.location.search).get('loaderT')
+        if (freeze != null) { tl.time(parseFloat(freeze), false); return }   // dev-only: freeze a frame
       }
       tl.play()
     }
@@ -205,48 +196,26 @@ export default function DiaLoader({ onReveal, onDone }) {
       gsapRef?.killTweensOf(tl)
       removeInput()
       html.style.overflow = prevOverflow
-      scene?.dispose()
-      scene = null
+      mono?.dispose()
+      mono = null
     }
   }, [])
-
 
   return (
     <div
       ref={rootRef}
-      className={`fixed inset-0 z-[100] overflow-hidden ${mintCss}`}
+      className="fixed inset-0 z-[100] overflow-hidden bg-dia-mint"
       style={{ clipPath: 'inset(0 0 0% 0)' }}
       role="status"
       aria-live="polite"
       aria-label="Loading Dia Shoppe"
     >
+      <div ref={auroraRef} className="absolute inset-0 opacity-0" style={{ background: auroraCss }} aria-hidden="true" />
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full opacity-0" aria-hidden="true" />
-
-      {/* CSS presentation (no WebGL / reduced motion): same assets, layered.
-          mul layers multiply onto the aurora, add layers screen on top. */}
-      <div ref={cssRef} className="absolute inset-0 bg-dia-mint" style={{ display: 'none', isolation: 'isolate' }} aria-hidden="true">
-        <div data-aurora className="absolute inset-0 opacity-0" style={{ background: auroraCss }} />
-        {/* centred with flexbox, NOT a transform: a transformed ancestor would
-            isolate the letters from the aurora and break the multiply blend */}
-        <div className="absolute inset-0 flex items-center justify-center pb-[8vh]">
-        <div className="relative" style={{ width: 'min(86vw, 700px)', aspectRatio: '4 / 2.85' }}>
-          {[['d', 'left-0 top-0', dMulM, dAddM], ['s', 'right-0 bottom-0', sMulM, sAddM]].map(([k, pos, mul, add]) => (
-            <div key={k} className={`absolute w-[60%] ${pos}`} style={{ aspectRatio: '4 / 3' }}>
-              <img data-d={k === 'd' ? '' : undefined} data-s={k === 's' ? '' : undefined} src={mul} alt=""
-                className="absolute inset-0 h-full w-full opacity-0" style={{ mixBlendMode: 'multiply' }} draggable={false} />
-              <img data-d={k === 'd' ? '' : undefined} data-s={k === 's' ? '' : undefined} src={add} alt=""
-                className="absolute inset-0 h-full w-full opacity-0" style={{ mixBlendMode: 'screen', filter: 'brightness(0.17)' }} draggable={false} />
-            </div>
-          ))}
-        </div>
-        </div>
-      </div>
-
-
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })) }}
-        className="dia-label absolute bottom-5 right-5 rounded-full border border-dia-cyan/30 bg-dia-mint/70 px-4 py-2 backdrop-blur-sm transition-colors hover:bg-dia-tea focus-visible:outline focus-visible:outline-2 focus-visible:outline-dia-cyan"
+        className="dia-label dia-glass absolute bottom-5 right-5 rounded-full px-4 py-2 transition-transform hover:scale-[1.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-dia-cyan"
       >
         Skip
       </button>

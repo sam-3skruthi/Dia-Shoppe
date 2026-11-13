@@ -167,8 +167,8 @@ export default function AdminBroadcast() {
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h2 className="font-display font-semibold text-ink-900 mb-3">Preview</h2>
-            <div className="rounded-2xl bg-[#e5ddd5] p-3 min-h-[120px]">
-              <div className="bg-[#dcf8c6] rounded-lg rounded-tr-none p-1.5 shadow-sm max-w-[90%] ml-auto">
+            <div className="rounded-2xl bg-[#CAF0F8] p-3 min-h-[120px]">
+              <div className="bg-[#CAF0F8] rounded-lg rounded-tr-none p-1.5 shadow-sm max-w-[90%] ml-auto">
                 {imagePreview && <img src={imagePreview} alt="" className="rounded-md mb-1.5 w-full object-cover max-h-40" />}
                 <div className="px-1.5 py-1 text-sm text-gray-800 whitespace-pre-wrap">
                   {preview || <span className="text-gray-400">Your message appears here…</span>}

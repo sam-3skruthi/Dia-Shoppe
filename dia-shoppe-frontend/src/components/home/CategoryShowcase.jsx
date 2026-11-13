@@ -3,8 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import CircularCarousel from '../ui/CircularCarousel'
 import { LiquidButton } from '../ui/buttons'
-import DsPair from './DsPair'
 import { useReveal } from '../../lib/useReveal'
+import Magnet from '../bits/Magnet'
+import { categoryInfo } from '../../data/categoryInfo'
+import { FiCheck, FiSearch } from 'react-icons/fi'
 import { useNarrow } from '../../lib/useNarrow'
 import { scrollToEl } from '../../lib/smoothScroll'
 
@@ -14,7 +16,7 @@ import { scrollToEl } from '../../lib/smoothScroll'
   that category's details, a Shop Now action and its products in a freshly
   shuffled ring. With fewer than four products the panel shows plain product
   cards instead of a ring (a ring of one or two looks wrong, and we never pad
-  with invented or duplicated products). The glass D + S sit behind it as one static, compact pair.
+  with invented or duplicated products). The glass D + S are site-wide now (DiaBackdrop).
 */
 const shuffle = (list) => {
   const a = [...list]
@@ -52,7 +54,14 @@ function MiniProduct({ p }) {
 function CategoryPanel({ cat, products, onClose, panelRef }) {
   const navigate = useNavigate()
   const narrow = useNarrow()
-  const brands = [...new Set(products.map((p) => p.brand).filter(Boolean))].slice(0, 5)
+  const brands = [...new Set(products.map((p) => p.brand).filter(Boolean))]
+  const prices = products.map((p) => p.price).filter((n) => Number.isFinite(n))
+  const inStock = products.filter((p) => p.stock > 0).length
+  const rupees = (n) => `₹${n.toLocaleString('en-IN')}`
+  const priceRange = prices.length
+    ? (Math.min(...prices) === Math.max(...prices) ? rupees(prices[0]) : `${rupees(Math.min(...prices))} – ${rupees(Math.max(...prices))}`)
+    : null
+  const info = categoryInfo[cat.slug]
   const ring = products.length >= 4
   const items = products.map((p) => ({
     src: plateFor(p), alt: p.name, title: p.name, subtitle: `₹${p.price.toLocaleString('en-IN')}`, slug: p.slug,
@@ -75,23 +84,35 @@ function CategoryPanel({ cat, products, onClose, panelRef }) {
             {Icon && <Icon size={14} aria-hidden="true" />} Category
           </span>
           <h3 className="font-heading text-3xl font-extrabold leading-tight text-dia-ink sm:text-4xl">{cat.label}</h3>
-          <p className="text-base leading-relaxed text-dia-ink/70">{cat.desc}</p>
-          <dl className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
+          <p className="text-base leading-relaxed text-dia-ink/75">{info?.overview || cat.desc}</p>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-dia-cyan/15 bg-dia-mint/60 p-4 text-sm">
             <div>
               <dt className="dia-label">Products</dt>
               <dd className="mt-1 font-heading text-2xl font-bold text-dia-ink">{products.length}</dd>
             </div>
+            <div>
+              <dt className="dia-label">In stock now</dt>
+              <dd className="mt-1 font-heading text-2xl font-bold text-dia-ink">{inStock}</dd>
+            </div>
+            {priceRange && (
+              <div className="col-span-2">
+                <dt className="dia-label">Price range</dt>
+                <dd className="mt-1 font-heading text-lg font-bold text-dia-ink">{priceRange}</dd>
+              </div>
+            )}
             {brands.length > 0 && (
-              <div className="min-w-0">
+              <div className="col-span-2 min-w-0">
                 <dt className="dia-label">Brands</dt>
                 <dd className="mt-1 text-dia-ink/80">{brands.join(' · ')}</dd>
               </div>
             )}
           </dl>
           <div className="flex flex-wrap items-center gap-3 pt-1">
-            <LiquidButton as={Link} to={`/products?category=${cat.slug}`} variant="accent" size="lg">
-              Shop Now
-            </LiquidButton>
+            <Magnet padding={70} magnetStrength={3} maxOffset={14}>
+              <LiquidButton as={Link} to={`/products?category=${cat.slug}`} variant="accent" size="lg">
+                Shop Now
+              </LiquidButton>
+            </Magnet>
             <button
               type="button"
               onClick={onClose}
@@ -133,6 +154,52 @@ function CategoryPanel({ cat, products, onClose, panelRef }) {
           {ring && <p className="mt-2 text-center text-xs text-dia-ink/55">Drag to explore. Click a product to open it.</p>}
         </div>
       </div>
+
+      {/* the guide: who it is for, what to compare, and exactly what is in stock */}
+      <div className="mt-10 grid gap-5 border-t border-dia-cyan/15 pt-8 md:grid-cols-3">
+        {info && (
+          <div className="rounded-2xl bg-dia-mint/60 p-5">
+            <h4 className="font-heading text-lg font-bold text-dia-ink">Who it&apos;s for</h4>
+            <ul className="mt-3 space-y-2 text-sm text-dia-ink/75">
+              {info.whoFor.map((t) => (
+                <li key={t} className="flex gap-2"><FiCheck className="mt-0.5 shrink-0 text-dia-aqua" aria-hidden="true" />{t}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {info && (
+          <div className="rounded-2xl bg-dia-mint/60 p-5">
+            <h4 className="font-heading text-lg font-bold text-dia-ink">What to look for</h4>
+            <ul className="mt-3 space-y-2 text-sm text-dia-ink/75">
+              {info.lookFor.map((t) => (
+                <li key={t} className="flex gap-2"><FiSearch className="mt-0.5 shrink-0 text-dia-aqua" aria-hidden="true" />{t}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {products.length > 0 && (
+          <div className="rounded-2xl bg-dia-mint/60 p-5">
+            <h4 className="font-heading text-lg font-bold text-dia-ink">Available in this range</h4>
+            <ul className="mt-3 max-h-56 space-y-1.5 overflow-y-auto pr-1 text-sm" data-lenis-prevent>
+              {products.map((p) => (
+                <li key={p.id}>
+                  <Link to={`/products/${p.slug}`} className="flex items-baseline justify-between gap-3 rounded-lg px-2 py-1 text-dia-ink/80 outline-none hover:bg-dia-tea/40 hover:text-dia-ink focus-visible:ring-2 focus-visible:ring-dia-aqua/60">
+                    <span className="min-w-0 truncate">{p.name}</span>
+                    <span className={`shrink-0 font-semibold ${p.stock > 0 ? 'text-dia-cyan' : 'text-dia-ink/40'}`}>
+                      {p.stock > 0 ? rupees(p.price) : 'Out of stock'}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      {info && (
+        <p className="mt-4 text-xs text-dia-ink/50">
+          General guidance only, not medical advice. Please follow your doctor&apos;s recommendation for the right device and settings.
+        </p>
+      )}
     </motion.div>
   )
 }
@@ -161,29 +228,23 @@ export default function CategoryShowcase({ categories, products }) {
 
   return (
     <section ref={rootRef} id="categories" className="relative overflow-hidden py-20 sm:py-24">
-      {/* the glass D + S: together, huge, centred behind the carousel, and
-          completely still. Centred with margins (not a transform) so the glass
-          blends with the page background behind it. */}
-      <DsPair
-        className="absolute left-[-12vw] top-[330px] w-[124vw] sm:inset-x-0 sm:left-auto sm:top-[250px] sm:mx-auto sm:w-[92vw] lg:top-[235px] lg:w-[min(76vw,1060px)]"
-        opacity={phone ? 0.45 : 0.6}
-      />
       <div className="relative z-10 mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
         <div data-reveal className="mx-auto mb-4 max-w-2xl text-center">
-          <span className="dia-label inline-block rounded-full border border-dia-cyan/25 bg-white/70 px-3 py-1 backdrop-blur">Categories</span>
+          <span className="dia-label dia-glass inline-block rounded-full px-3.5 py-1.5">Categories</span>
           <h2 className="mt-4 font-heading text-4xl font-extrabold text-dia-ink sm:text-5xl">Shop by Category</h2>
           <p className="mt-3 text-lg text-dia-ink/65">Find exactly what you need from our wide range. Pick a category to see what is inside.</p>
         </div>
 
-        {/* large ring: the front card dominates, neighbours stay visible on both sides */}
-        <div data-reveal data-reveal-delay="0.1" className="h-[440px] text-dia-ink sm:h-[600px] lg:h-[760px]">
+        {/* compact ring of landscape cards: low and wide, so the page (and the
+            glass D + S behind it) stays visible above and below */}
+        <div data-reveal data-reveal-delay="0.1" className="h-[280px] text-dia-ink sm:h-[350px] lg:h-[430px]">
           <CircularCarousel
             items={items}
             preset="cylinder"
             intro="rise"
-            cardWidth={phone ? 220 : tablet ? 320 : 430}
-            aspectRatio={0.82}
-            gap={phone ? 18 : 28}
+            cardWidth={phone ? 250 : tablet ? 380 : 500}
+            aspectRatio={1.9}
+            gap={phone ? 16 : 24}
             perspective={phone ? 1100 : 1700}
             speed={12}
             cornerRadius={22}
@@ -202,9 +263,11 @@ export default function CategoryShowcase({ categories, products }) {
               <h3 className="font-heading text-2xl font-extrabold text-dia-ink sm:text-3xl">{focused.label}</h3>
               <p className="mt-1 text-dia-ink/65">{focused.desc}</p>
             </div>
-            <LiquidButton type="button" size="sm" variant="accent" onClick={() => select(focused.slug)}>
-              Explore {focused.label}{count(focused.slug) ? ` · ${count(focused.slug)}` : ''}
-            </LiquidButton>
+            <Magnet padding={60} magnetStrength={3} maxOffset={12}>
+              <LiquidButton type="button" size="sm" variant="accent" onClick={() => select(focused.slug)}>
+                Explore {focused.label}{count(focused.slug) ? ` · ${count(focused.slug)}` : ''}
+              </LiquidButton>
+            </Magnet>
           </div>
         )}
 

@@ -18,8 +18,8 @@ import {
 
 // bottom → top: online sits under COD in the stack
 const REVENUE_SERIES = [
-  { key: 'online', name: 'Paid online', gradient: 'linear-gradient(180deg,#86D6D5,#238689)', color: '#238689' },
-  { key: 'cod', name: 'Cash on delivery', gradient: 'linear-gradient(180deg,#34d399,#059669)', color: '#10b981' },
+  { key: 'online', name: 'Paid online', gradient: 'linear-gradient(180deg,#90E0EF,#0277BD)', color: '#0277BD' },
+  { key: 'cod', name: 'Cash on delivery', gradient: 'linear-gradient(180deg,#90E0EF,#0277BD)', color: '#00B4D8' },
 ]
 
 const inr = (n) => '₹' + n.toLocaleString('en-IN')
@@ -223,7 +223,7 @@ export default function AdminDashboard() {
             <div className="space-y-3">
               {stats.topProducts.map((p) => (
                 <BarRow key={p.name} label={p.name} sub={p.brand}
-                  value={p.units} max={maxUnits} valueLabel={`${p.units} sold · ${inr(p.revenue)}`} color="#10b981" />
+                  value={p.units} max={maxUnits} valueLabel={`${p.units} sold · ${inr(p.revenue)}`} color="#00B4D8" />
               ))}
             </div>
           )}

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import DepthCarousel from '../ui/DepthCarousel'
+import CircularGallery from '../bits/CircularGallery'
+import Magnet from '../bits/Magnet'
 import { LiquidButton } from '../ui/buttons'
 import { useCart } from '../../context/CartContext'
 import { useReveal } from '../../lib/useReveal'
@@ -8,10 +9,12 @@ import { useNarrow } from '../../lib/useNarrow'
 import { FiChevronRight } from 'react-icons/fi'
 
 /*
-  Featured Products — DepthCarousel over the same six products the old grid
-  showed (first six of the live catalog). The focused card opens its product
-  page; the panel under the carousel shows its details and the existing
-  add-to-cart. A product without a photo falls back to its category photo.
+  Featured Products — a CircularGallery (WebGL arc of cards) over the first
+  twelve products of the live catalog. The centred card drives the details
+  panel underneath (price, stock, the existing add-to-cart); clicking a card
+  opens its product page. A product without a photo falls back to its
+  category photo. The section is marked data-hide-ds so the site-wide glass
+  D + S never show here: the ghost fibres stay, the focus stays on products.
 */
 export default function FeaturedDepth({ products }) {
   const rootRef = useRef(null)
@@ -22,8 +25,13 @@ export default function FeaturedDepth({ products }) {
   const [added, setAdded] = useState(false)
   useReveal(rootRef)
 
-  const featured = products.slice(0, 6)
-  const items = featured.map((p) => ({ image: p.image || `/categories/${p.category}.jpg`, alt: p.name }))
+  const featured = products.slice(0, 12)
+  const items = featured.map((p) => ({
+    image: p.image || `/categories/${p.category}.jpg`,
+    text: p.name,
+    description: `₹${p.price.toLocaleString('en-IN')}`,
+    alt: p.name,
+  }))
   const current = featured[active] || featured[0]
   const inStock = current ? current.stock > 0 : false
   const discount = current && current.originalPrice > current.price
@@ -37,47 +45,57 @@ export default function FeaturedDepth({ products }) {
   }
 
   return (
-    <section ref={rootRef} className="relative overflow-hidden py-20 sm:py-28">
+    <section ref={rootRef} id="featured" data-hide-ds className="relative overflow-hidden py-20 sm:py-28">
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div data-reveal className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <span className="dia-label inline-block rounded-full border border-dia-cyan/25 bg-dia-tea/60 px-3 py-1">Top Picks</span>
+            <span className="dia-label dia-glass inline-block rounded-full px-3.5 py-1.5">Top Picks</span>
             <h2 className="mt-4 font-heading text-4xl font-extrabold text-dia-ink sm:text-5xl">Featured Products</h2>
           </div>
-          <LiquidButton as={Link} to="/products" size="sm">
-            View All <FiChevronRight size={16} aria-hidden="true" />
-          </LiquidButton>
+          <Magnet padding={60} magnetStrength={3} maxOffset={12}>
+            <LiquidButton as={Link} to="/products" size="sm">
+              View All <FiChevronRight size={16} aria-hidden="true" />
+            </LiquidButton>
+          </Magnet>
         </div>
 
         {featured.length > 0 ? (
           <>
-            <div data-reveal className="h-[430px] sm:h-[500px]">
-              <DepthCarousel
+            {/* ONE opaque palette stage holding both the carousel and the
+                product details: a clean, solid surface (no fibres or page
+                showing through) so the product cards pop */}
+            <div
+              data-reveal
+              className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#E0F7FA_0%,#CAF0F8_50%,#90E0EF_100%)] pb-6 shadow-[0_40px_90px_-45px_rgba(2,119,189,0.55),inset_0_1px_0_rgba(224,247,250,0.9)] ring-1 ring-dia-cyan/15 sm:pb-8"
+            >
+              <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-[radial-gradient(60%_80%_at_50%_100%,rgba(0,180,216,0.28),transparent_70%)]" />
+              <div className="relative h-[400px] sm:h-[480px]">
+              <CircularGallery
                 items={items}
-                cardWidth={narrow ? 210 : 290}
-                cardHeight={narrow ? 280 : 380}
-                depth={narrow ? 150 : 220}
-                spread={narrow ? 56 : 90}
-                tilt={22}
-                tiltDirection="right"
-                perspective={1400}
-                visibleCards={narrow ? 3 : 4}
-                falloff={0.2}
-                blur={6}
-                autoplay
-                autoplayDelay={4200}
-                loop
-                ariaLabel="Featured products"
-                onChange={(i) => { setActive(i); setAdded(false) }}
-                onItemClick={(i) => navigate(`/products/${featured[i].slug}`)}
+                bend={narrow ? 2 : 2.6}
+                itemSize={narrow ? 0.62 : 0.7}
+                itemAspect={0.8}
+                gap={0.34}
+                borderRadius={0.06}
+                wave={0.6}
+                fadeEdges={0.1}
+                shadow={0.3}
+                textColor="#021225"
+                font="700 17px Manrope"
+                scrollSpeed={2}
+                scrollEase={0.06}
+                autoScroll={0.6}
+                openOnClick={false}
+                onActiveChange={(i) => { setActive(i); setAdded(false) }}
+                onItemClick={(_, i) => navigate(`/products/${featured[i].slug}`)}
+                aria-label="Featured products"
               />
-            </div>
+              </div>
 
             {current && (
               <div
-                data-reveal
                 aria-live="polite"
-                className="mx-auto mt-6 flex max-w-3xl flex-wrap items-center justify-between gap-5 rounded-3xl border border-dia-cyan/15 bg-dia-mint/70 p-5 sm:p-6"
+                className="dia-glass relative mx-4 flex flex-wrap items-center justify-between gap-5 rounded-3xl p-5 sm:mx-auto sm:max-w-3xl sm:p-6"
               >
                 <div className="min-w-0">
                   <div className="dia-label">{current.brand}</div>
@@ -111,6 +129,7 @@ export default function FeaturedDepth({ products }) {
                 </div>
               </div>
             )}
+            </div>
           </>
         ) : (
           <p className="rounded-2xl bg-dia-mint p-10 text-center text-dia-ink/60">Loading our featured products…</p>

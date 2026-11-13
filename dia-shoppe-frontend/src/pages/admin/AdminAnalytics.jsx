@@ -10,12 +10,12 @@ import { FaInstagram, FaFacebookF, FaGoogle, FaWhatsapp, FaYoutube } from 'react
 
 // brand colour + icon for each acquisition channel
 const SOURCE_META = {
-  Instagram: { icon: FaInstagram, color: '#E1306C' },
-  Facebook: { icon: FaFacebookF, color: '#1877F2' },
-  Google: { icon: FaGoogle, color: '#4285F4' },
-  WhatsApp: { icon: FaWhatsapp, color: '#25D366' },
-  YouTube: { icon: FaYoutube, color: '#FF0000' },
-  Direct: { icon: FiCompass, color: '#64748b' },
+  Instagram: { icon: FaInstagram, color: '#0277BD' },
+  Facebook: { icon: FaFacebookF, color: '#0277BD' },
+  Google: { icon: FaGoogle, color: '#0288D1' },
+  WhatsApp: { icon: FaWhatsapp, color: '#00B4D8' },
+  YouTube: { icon: FaYoutube, color: '#0277BD' },
+  Direct: { icon: FiCompass, color: '#4E7F98' },
 }
 
 /*
@@ -27,8 +27,8 @@ const SOURCE_META = {
 const inr = (n) => '₹' + Number(n).toLocaleString('en-IN')
 
 const ORDERS_SERIES = [
-  { key: 'completed', name: 'Completed', gradient: 'linear-gradient(180deg,#34d399,#059669)', color: '#10b981' },
-  { key: 'cancelled', name: 'Cancelled', gradient: 'linear-gradient(180deg,#fca5a5,#ef4444)', color: '#ef4444' },
+  { key: 'completed', name: 'Completed', gradient: 'linear-gradient(180deg,#90E0EF,#0277BD)', color: '#00B4D8' },
+  { key: 'cancelled', name: 'Cancelled', gradient: 'linear-gradient(180deg,#90E0EF,#0277BD)', color: '#0277BD' },
 ]
 
 function Card({ title, action, className = '', children }) {
@@ -157,7 +157,7 @@ export default function AdminAnalytics() {
       {/* revenue trend + orders per month */}
       <div className="grid lg:grid-cols-2 gap-4 mt-4">
         <Card title="Daily revenue" action={<span className="text-xs text-gray-400">Last 30 days</span>}>
-          <AreaChart values={stats.daily.map((d) => d.revenue)} stroke="#10b981" gradientId="dailyRevGrad" />
+          <AreaChart values={stats.daily.map((d) => d.revenue)} stroke="#00B4D8" gradientId="dailyRevGrad" />
           <div className="flex justify-between text-[10px] text-gray-400 mt-1">
             <span>{stats.daily[0].label}</span>
             <span>{stats.daily[14].label}</span>
@@ -178,7 +178,7 @@ export default function AdminAnalytics() {
             <div className="space-y-3">
               {stats.topProducts.map((p) => (
                 <BarRow key={p.name} label={p.name} sub={p.brand} value={p.revenue} max={maxProd}
-                  valueLabel={`${p.units} sold · ${inr(p.revenue)}${p.hasCost && p.profit > 0 ? ` · +${inr(Math.round(p.profit))}` : ''}`} color="#10b981" />
+                  valueLabel={`${p.units} sold · ${inr(p.revenue)}${p.hasCost && p.profit > 0 ? ` · +${inr(Math.round(p.profit))}` : ''}`} color="#00B4D8" />
               ))}
             </div>
           )}
@@ -190,7 +190,7 @@ export default function AdminAnalytics() {
             <div className="space-y-3">
               {stats.topBrands.map((b) => (
                 <BarRow key={b.brand} label={b.brand} value={b.revenue} max={maxBrand}
-                  valueLabel={`${b.units} sold · ${inr(b.revenue)}`} color="#1D6F72" />
+                  valueLabel={`${b.units} sold · ${inr(b.revenue)}`} color="#02629C" />
               ))}
             </div>
           )}
@@ -208,7 +208,7 @@ export default function AdminAnalytics() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
               {stats.bySource.map((s) => {
-                const meta = SOURCE_META[s.source] || { icon: FiCompass, color: '#64748b' }
+                const meta = SOURCE_META[s.source] || { icon: FiCompass, color: '#4E7F98' }
                 const pct = Math.round((s.orders / stats.completedOrders) * 100)
                 return (
                   <div key={s.source} className="flex items-center gap-3">
@@ -246,7 +246,7 @@ export default function AdminAnalytics() {
             <div className="space-y-3">
               {stats.byCategory.map((c) => (
                 <BarRow key={c.category} label={c.category} value={c.revenue} max={maxCat}
-                  valueLabel={inr(c.revenue)} color="#238689" />
+                  valueLabel={inr(c.revenue)} color="#0277BD" />
               ))}
             </div>
           )}
@@ -259,7 +259,7 @@ export default function AdminAnalytics() {
             <div className="space-y-3">
               {stats.byCity.map((c) => (
                 <BarRow key={c.city} label={c.city} sub={c.state} value={c.orders} max={maxCity}
-                  valueLabel={`${c.orders} order${c.orders === 1 ? '' : 's'} · ${inr(c.revenue)}`} color="#10b981" />
+                  valueLabel={`${c.orders} order${c.orders === 1 ? '' : 's'} · ${inr(c.revenue)}`} color="#00B4D8" />
               ))}
             </div>
           )}
@@ -271,8 +271,8 @@ export default function AdminAnalytics() {
           ) : (
             <div className="space-y-4">
               {[
-                { label: 'Cash on Delivery', count: stats.codOrders, color: '#10b981' },
-                { label: 'Paid Online', count: stats.onlineOrders, color: '#238689' },
+                { label: 'Cash on Delivery', count: stats.codOrders, color: '#00B4D8' },
+                { label: 'Paid Online', count: stats.onlineOrders, color: '#0277BD' },
               ].map((m) => {
                 const pct = Math.round((m.count / stats.completedOrders) * 100)
                 return (

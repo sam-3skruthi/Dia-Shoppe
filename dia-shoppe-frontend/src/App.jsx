@@ -30,6 +30,8 @@ import AdminBroadcast from './pages/admin/AdminBroadcast'
 import AdminSocial from './pages/admin/AdminSocial'
 import AdminAnalytics from './pages/admin/AdminAnalytics'
 import AdminSettings from './pages/admin/AdminSettings'
+import SiteEffects from './components/SiteEffects'
+import { LiquidGlassDefs } from './components/ui/buttons'
 
 // Per-route browser-tab titles. Exact paths first; prefixes handled below.
 const TITLES = {
@@ -73,6 +75,9 @@ function App() {
       <CartProvider>
         <BrowserRouter>
           <PageviewTracker />
+          <SiteEffects />
+          {/* the shared liquid-glass SVG filter (glass buttons + glass pills), once for every page */}
+          <LiquidGlassDefs />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />

@@ -3,11 +3,10 @@
   nothing links anywhere (and no icon is shown) for an empty or non-https value,
   so there is never a broken or invented link.
 
-  TODO(owner): supply the official Instagram profile URL (https://…) and, if
-  wanted, the handle; add Facebook / X only when confirmed.
+  Instagram confirmed by the owner. Add Facebook / X only when confirmed.
 */
 export const social = {
-  instagram: { url: '', handle: '' },
+  instagram: { url: 'https://www.instagram.com/hms_sandeep/', handle: 'hms_sandeep' },
   facebook: { url: '' },
   twitter: { url: '' },
 }

@@ -47,7 +47,7 @@ export default function SocialIcons({ className = '' }) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${label} (opens in a new tab)`}
-              className="flex h-12 w-12 items-center justify-center rounded-full border border-dia-cyan/20 bg-white/80 text-dia-cyan shadow-[0_10px_20px_-10px_rgba(35,134,137,0.5)] backdrop-blur transition-all duration-200 [transition-timing-function:cubic-bezier(0.68,-0.55,0.265,1.55)] hover:-translate-y-1 hover:border-transparent hover:bg-gradient-to-br hover:from-dia-aqua hover:to-dia-cyan hover:text-white focus-visible:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dia-cyan"
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-dia-cyan/20 bg-white/80 text-dia-cyan shadow-[0_10px_20px_-10px_rgba(2,119,189,0.5)] backdrop-blur transition-all duration-200 [transition-timing-function:cubic-bezier(0.68,-0.55,0.265,1.55)] hover:-translate-y-1 hover:border-transparent hover:bg-gradient-to-br hover:from-dia-aqua hover:to-dia-cyan hover:text-white focus-visible:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dia-cyan"
             >
               {svg}
             </a>

@@ -37,9 +37,9 @@ const Button = React.forwardRef(function Button({ className, variant, size, asCh
 
 /* ── Liquid glass button ─────────────────────────────────────────── */
 const SHADOW_LIGHT =
-  'shadow-[0_0_6px_rgba(2,18,37,0.04),0_2px_6px_rgba(2,18,37,0.10),inset_3px_3px_0.5px_-3px_rgba(2,18,37,0.5),inset_-3px_-3px_0.5px_-3px_rgba(2,18,37,0.45),inset_1px_1px_1px_-0.5px_rgba(2,18,37,0.3),inset_-1px_-1px_1px_-0.5px_rgba(2,18,37,0.3),inset_0_0_6px_6px_rgba(2,18,37,0.05),inset_0_0_2px_2px_rgba(2,18,37,0.03),0_0_12px_rgba(255,255,255,0.35)]'
+  'shadow-[0_0_6px_rgba(2,18,37,0.04),0_2px_6px_rgba(2,18,37,0.10),inset_3px_3px_0.5px_-3px_rgba(2,18,37,0.5),inset_-3px_-3px_0.5px_-3px_rgba(2,18,37,0.45),inset_1px_1px_1px_-0.5px_rgba(2,18,37,0.3),inset_-1px_-1px_1px_-0.5px_rgba(2,18,37,0.3),inset_0_0_6px_6px_rgba(2,18,37,0.05),inset_0_0_2px_2px_rgba(2,18,37,0.03),0_0_12px_rgba(224,247,250,0.35)]'
 const SHADOW_DARK =
-  'shadow-[0_0_8px_rgba(0,0,0,0.03),0_2px_6px_rgba(0,0,0,0.08),inset_3px_3px_0.5px_-3.5px_rgba(255,255,255,0.09),inset_-3px_-3px_0.5px_-3.5px_rgba(255,255,255,0.85),inset_1px_1px_1px_-0.5px_rgba(255,255,255,0.6),inset_-1px_-1px_1px_-0.5px_rgba(255,255,255,0.6),inset_0_0_6px_6px_rgba(255,255,255,0.12),inset_0_0_2px_2px_rgba(255,255,255,0.06),0_0_12px_rgba(0,0,0,0.15)]'
+  'shadow-[0_0_8px_rgba(2,18,37,0.03),0_2px_6px_rgba(2,18,37,0.08),inset_3px_3px_0.5px_-3.5px_rgba(224,247,250,0.09),inset_-3px_-3px_0.5px_-3.5px_rgba(224,247,250,0.85),inset_1px_1px_1px_-0.5px_rgba(224,247,250,0.6),inset_-1px_-1px_1px_-0.5px_rgba(224,247,250,0.6),inset_0_0_6px_6px_rgba(224,247,250,0.12),inset_0_0_2px_2px_rgba(224,247,250,0.06),0_0_12px_rgba(2,18,37,0.15)]'
 
 const LIQUID_SIZES = {
   sm: 'h-9 px-5 text-sm',
@@ -48,10 +48,11 @@ const LIQUID_SIZES = {
 }
 // tone = the surface the button sits on ("dark" = over the hero video)
 const LIQUID_FILL = {
-  'light-glass': 'bg-white/55',
-  'light-accent': 'bg-dia-aqua/25',
-  'dark-glass': 'bg-white/10',
-  'dark-accent': 'bg-dia-aqua/35',
+  'light-glass': 'bg-dia-mint/70',
+  // accent = clearly blue: Deep Blue → Electric Blue
+  'light-accent': 'bg-gradient-to-r from-dia-cyan to-dia-aqua',
+  'dark-glass': 'bg-dia-tea/15',
+  'dark-accent': 'bg-gradient-to-r from-dia-cyan/90 to-dia-aqua/85',
 }
 
 // backdrop-filter: url(#…) only renders in Chromium; elsewhere use a plain blur.
@@ -70,7 +71,7 @@ const LiquidButton = React.forwardRef(function LiquidButton(
       className={cn(
         'relative isolate inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold outline-none transition duration-300 hover:scale-[1.04] active:scale-[0.98] focus-visible:ring-[3px] focus-visible:ring-dia-aqua/70 disabled:pointer-events-none disabled:opacity-50',
         LIQUID_SIZES[size],
-        tone === 'dark' ? 'text-white' : 'text-dia-ink',
+        tone === 'dark' || variant === 'accent' ? 'text-dia-mint' : 'text-dia-ink',
         className
       )}
       {...props}
@@ -106,10 +107,10 @@ function LiquidGlassDefs() {
 /* ── Metal button (supplied; no placement decided yet, so not used on Home) ── */
 const METAL = {
   default: {
-    outer: 'bg-gradient-to-b from-[#000] to-[#A0A0A0]',
-    inner: 'bg-gradient-to-b from-[#FAFAFA] via-[#3E3E3E] to-[#E5E5E5]',
-    button: 'bg-gradient-to-b from-[#B9B9B9] to-[#969696]',
-    text: 'text-white [text-shadow:_0_-1px_0_rgb(80_80_80_/_100%)]',
+    outer: 'bg-gradient-to-b from-[#021225] to-[#9CC7D8]',
+    inner: 'bg-gradient-to-b from-[#E0F7FA] via-[#173A52] to-[#CAF0F8]',
+    button: 'bg-gradient-to-b from-[#C3E2EC] to-[#6E9FB5]',
+    text: 'text-white [text-shadow:_0_-1px_0_rgb(2_18_37_/_100%)]',
   },
   primary: {
     outer: 'bg-gradient-to-b from-dia-ink to-dia-aqua',

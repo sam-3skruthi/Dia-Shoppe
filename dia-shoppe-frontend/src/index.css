@@ -17,7 +17,7 @@
   body {
     font-family: 'DM Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
     color: #0B2A44;
-    background-color: #F2FFF6;
+    background-color: #E0F7FA;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -35,15 +35,21 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
+  }
+  /* The background paint itself, shared by body::before and by the copy inside
+     the site-wide backdrop (DiaBackdrop.jsx), so that copy matches exactly. */
+  body::before,
+  .dia-bg-paint {
     background-image:
       url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.04  0 0 0 0 0.16  0 0 0 0 0.2  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
-      radial-gradient(60rem 40rem at 6% -8%, rgba(202, 255, 222, 0.85), transparent 62%),
-      radial-gradient(52rem 38rem at 98% 10%, rgba(189, 241, 248, 0.65), transparent 64%),
-      radial-gradient(46rem 34rem at 78% 104%, rgba(44, 211, 194, 0.13), transparent 66%),
-      radial-gradient(40rem 30rem at -2% 100%, rgba(107, 91, 214, 0.06), transparent 66%);
+      radial-gradient(64rem 44rem at 4% -10%, rgba(144, 224, 239, 0.95), transparent 62%),
+      radial-gradient(56rem 42rem at 100% 6%, rgba(0, 180, 216, 0.42), transparent 64%),
+      radial-gradient(52rem 40rem at 82% 108%, rgba(2, 119, 189, 0.30), transparent 66%),
+      radial-gradient(44rem 34rem at -4% 96%, rgba(0, 180, 216, 0.20), transparent 66%);
     background-size: 160px 160px, auto, auto, auto, auto;
     background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   }
+  .dia-bg-paint { background-color: #E0F7FA; }
   #root {
     width: 100%;
     min-height: 100vh;
@@ -61,15 +67,15 @@
   have been revamped (currently none → zero visual change).
 */
 :root {
-  --dia-mint: #f2fff6;
-  --dia-tea: #caffde;
-  --dia-aqua: #25c5e9;
-  --dia-cyan: #238689;
+  --dia-mint: #E0F7FA;
+  --dia-tea: #90E0EF;
+  --dia-aqua: #00B4D8;
+  --dia-cyan: #0277BD;
   --dia-ink: #021225;
-  --dia-emerald: #1fb98a;
-  --dia-turquoise: #2cd3c2;
-  --dia-pale: #bdf1f8;
-  --dia-violet: #6b5bd6;
+  --dia-emerald: #0096C7;
+  --dia-turquoise: #48CAE4;
+  --dia-pale: #CAF0F8;
+  --dia-violet: #0288D1;
 }
 
 @layer base {
@@ -89,10 +95,10 @@
   /* Restrained aurora wash: soft light diffusion, not a rainbow gradient. */
   .dia-aurora {
     background:
-      radial-gradient(48rem 30rem at 12% -8%, rgba(202, 255, 222, 0.95), transparent 62%),
-      radial-gradient(40rem 28rem at 92% 6%, rgba(37, 197, 233, 0.22), transparent 66%),
-      radial-gradient(34rem 26rem at 70% 108%, rgba(44, 211, 194, 0.20), transparent 64%),
-      radial-gradient(30rem 22rem at 4% 96%, rgba(107, 91, 214, 0.08), transparent 66%),
+      radial-gradient(48rem 30rem at 12% -8%, rgba(144, 224, 239, 0.95), transparent 62%),
+      radial-gradient(40rem 28rem at 92% 6%, rgba(0, 180, 216, 0.22), transparent 66%),
+      radial-gradient(34rem 26rem at 70% 108%, rgba(2, 119, 189, 0.20), transparent 64%),
+      radial-gradient(30rem 22rem at 4% 96%, rgba(2, 136, 209, 0.08), transparent 66%),
       var(--dia-mint);
   }
   /* Fine film grain (SVG noise, ~3% opacity) layered over a surface. */
@@ -117,6 +123,29 @@
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--dia-cyan);
+  }
+  /* Liquid glass surface — the same recipe as the glass LiquidButton
+     (Shop Now, View All…): Icy fill, inset edge highlights, soft outer glow,
+     backdrop blur, plus the SVG displacement (#dia-liquid-glass) where the
+     browser supports it (Chromium). Used for the small label pills. */
+  .dia-glass {
+    position: relative;
+    isolation: isolate;
+    background-color: rgba(224, 247, 250, 0.7);
+    box-shadow:
+      0 0 6px rgba(2, 18, 37, 0.04),
+      0 2px 6px rgba(2, 18, 37, 0.10),
+      inset 3px 3px 0.5px -3px rgba(2, 18, 37, 0.5),
+      inset -3px -3px 0.5px -3px rgba(2, 18, 37, 0.45),
+      inset 1px 1px 1px -0.5px rgba(2, 18, 37, 0.3),
+      inset -1px -1px 1px -0.5px rgba(2, 18, 37, 0.3),
+      inset 0 0 6px 6px rgba(2, 18, 37, 0.05),
+      inset 0 0 2px 2px rgba(2, 18, 37, 0.03),
+      0 0 12px rgba(224, 247, 250, 0.35);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    backdrop-filter: url("#dia-liquid-glass") blur(1.5px);   /* ignored where unsupported → the blur above stays */
+    border: 0;
   }
 }
 
@@ -154,11 +183,11 @@ html.lenis, html.lenis body { height: auto; }
   starting point (a warm sale accent); replace with your own sale design:
 */
 :root[data-sale-theme='on'] {
-  --sale-accent: #e11d48; /* rose-600 — sale red */
+  --sale-accent: #0277BD; /* rose-600 — sale red */
 }
 :root[data-sale-theme='on'] body {
   /* subtle warm tint so the whole store reads as "on sale"; expand freely */
   background:
-    radial-gradient(60rem 60rem at 100% -10%, rgba(225, 29, 72, 0.05), transparent 60%),
-    #ffffff;
+    radial-gradient(60rem 60rem at 100% -10%, rgba(2, 119, 189, 0.05), transparent 60%),
+    #E0F7FA;
 }

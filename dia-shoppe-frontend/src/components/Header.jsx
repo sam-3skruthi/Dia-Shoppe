@@ -33,7 +33,7 @@ export default function Header({ showSearch = false, overlay = false, brandReady
 
   const headerCls = overlay
     ? 'absolute top-0 inset-x-0 z-50 bg-transparent'
-    : 'sticky top-0 z-50 bg-[#F2FFF6]/85 backdrop-blur-md border-b border-primary-100 shadow-[0_8px_24px_-20px_rgba(2,18,37,0.45)]'
+    : 'sticky top-0 z-50 bg-[#E0F7FA]/85 backdrop-blur-md border-b border-primary-100 shadow-[0_8px_24px_-20px_rgba(2,18,37,0.45)]'
   const link = overlay
     ? 'text-sm text-white/85 hover:text-white font-medium transition-colors'
     : 'text-sm text-gray-600 hover:text-primary-700 font-medium'
@@ -53,7 +53,7 @@ export default function Header({ showSearch = false, overlay = false, brandReady
             <img
               src="/logos/ds-emblem.png"
               alt="Dia Shoppe"
-              className={`h-9 sm:h-10 w-auto ${overlay ? 'drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]' : ''}`}
+              className={`h-9 sm:h-10 w-auto ${overlay ? 'drop-shadow-[0_2px_6px_rgba(2,18,37,0.45)]' : ''}`}
             />
             <span className="font-display font-bold leading-none text-lg sm:text-2xl tracking-tight">
               <span className={overlay ? 'text-white drop-shadow' : 'text-primary-800'}>Dia </span>

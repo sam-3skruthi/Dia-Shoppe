@@ -2,12 +2,19 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from './motion'
 import { LiquidButton } from './ui/buttons'
+import Magnet from './bits/Magnet'
 import { FiAward, FiChevronDown } from 'react-icons/fi'
+import HeroReel from './HeroReel'
+import { heroClips } from '../data/heroVideos'
+
+// the clip reel from src/data/heroVideos.js, or the original single video until clips are added
+const CLIPS = heroClips.length ? heroClips : [{ src: '/hero-vid.mp4', poster: '/hero-bp.webp' }]
 
 /*
   Full-bleed cinematic hero with a curved ("inverted semicircle") bottom edge.
   Background priority:
-    1. /public/hero-vid.mp4  — looping background video → <video>
+    1. video reel — the clips in src/data/heroVideos.js, played one after
+       another (falls back to /public/hero-vid.mp4 on a loop while it is empty)
     2. /public/hero-bp.webp  — still photo poster / Ken Burns fallback
     3. deep-blue → teal gradient (always underneath)
 */
@@ -21,14 +28,7 @@ export default function CinematicHero({ start = true }) {
       <div className="absolute inset-0 bg-gradient-to-br from-ink-950 via-primary-950 to-secondary-900" aria-hidden="true" />
 
       {videoOk && (
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay muted loop playsInline
-          poster="/hero-bp.webp"
-          onError={() => setVideoOk(false)}
-        >
-          <source src="/hero-vid.mp4" type="video/mp4" />
-        </video>
+        <HeroReel clips={CLIPS} className="absolute inset-0 w-full h-full object-cover" onFail={() => setVideoOk(false)} />
       )}
 
       {!videoOk && imgOk && (
@@ -47,7 +47,7 @@ export default function CinematicHero({ start = true }) {
       <div className="absolute inset-0 bg-gradient-to-t from-ink-950/65 via-transparent to-ink-950/30" aria-hidden="true" />
       <div className="absolute inset-0 bg-secondary-300/10 mix-blend-soft-light" aria-hidden="true" />
       {/* light navy gradient pooled in the corners (vignette) */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(4,13,24,0.6)_100%)]" aria-hidden="true" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(2,18,37,0.6)_100%)]" aria-hidden="true" />
 
       {/* ── Foreground content (centered, editorial) ── */}
       <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-36 pb-28">
@@ -73,12 +73,16 @@ export default function CinematicHero({ start = true }) {
           </p>
 
           <div className="flex flex-wrap justify-center gap-3">
-            <LiquidButton as={Link} to="/products" tone="dark" variant="accent" size="xl">
-              Shop Now
-            </LiquidButton>
-            <LiquidButton as="a" href="#categories" tone="dark" size="xl">
-              Browse Categories
-            </LiquidButton>
+            <Magnet padding={80} magnetStrength={3} maxOffset={16}>
+              <LiquidButton as={Link} to="/products" tone="dark" variant="accent" size="xl">
+                Shop Now
+              </LiquidButton>
+            </Magnet>
+            <Magnet padding={80} magnetStrength={3} maxOffset={16}>
+              <LiquidButton as="a" href="#categories" tone="dark" size="xl">
+                Browse Categories
+              </LiquidButton>
+            </Magnet>
           </div>
         </motion.div>
       </div>

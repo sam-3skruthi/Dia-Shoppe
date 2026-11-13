@@ -3,7 +3,7 @@
   echoing the Veil reference. `fill` sets the colour of the incoming section;
   `flip` mirrors the curve vertically.
 */
-export default function WavyDivider({ fill = '#f5f6f8', flip = false, className = '' }) {
+export default function WavyDivider({ fill = '#E0F7FA', flip = false, className = '' }) {
   return (
     <div className={`w-full leading-[0] ${className}`} aria-hidden="true">
       <svg

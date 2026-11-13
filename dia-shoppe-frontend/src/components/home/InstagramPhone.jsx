@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { ContainerScroll } from '../ui/ContainerScroll'
 import SocialIcons from './SocialIcons'
 import { social, isLink } from '../../data/social'
+import Magnet from '../bits/Magnet'
 import { categories } from '../../data/products'
 import { useReveal } from '../../lib/useReveal'
 
@@ -33,7 +34,7 @@ function PhoneScreen() {
       </div>
 
       <div className="flex items-center gap-4 px-4 pt-4">
-        <div className="rounded-full bg-[conic-gradient(from_200deg,#25C5E9,#2CD3C2,#CAFFDE,#238689,#25C5E9)] p-[3px]">
+        <div className="rounded-full bg-[conic-gradient(from_200deg,#00B4D8,#48CAE4,#90E0EF,#0277BD,#00B4D8)] p-[3px]">
           <div className="rounded-full bg-white p-[3px]">
             <img src="/logos/ds-emblem.png" alt="" className="h-[68px] w-[68px] rounded-full object-cover" />
           </div>
@@ -49,9 +50,12 @@ function PhoneScreen() {
       </p>
 
       <div className="px-4 pt-3">
-        <span className="flex h-9 items-center justify-center rounded-lg bg-gradient-to-r from-dia-cyan to-dia-aqua text-sm font-bold text-white">
-          Follow
-        </span>
+        {/* magnetic: the button leans toward the cursor as it approaches */}
+        <Magnet padding={90} magnetStrength={2.2} maxOffset={18} scale={1.06} style={{ display: "block" }}>
+          <span className="flex h-9 w-full items-center justify-center rounded-lg bg-gradient-to-r from-dia-cyan to-dia-aqua text-sm font-bold text-white shadow-[0_10px_24px_-12px_rgba(2,119,189,0.8)]">
+            Follow
+          </span>
+        </Magnet>
       </div>
 
       <div className="mt-4 grid flex-1 grid-cols-3 gap-[2px] overflow-hidden border-t border-dia-ink/10 bg-dia-ink/10 pt-[2px]">
@@ -71,7 +75,7 @@ function PhoneScreen() {
 
 function Phone({ href }) {
   const body = (
-    <div className="relative mx-auto h-[600px] w-[min(300px,78vw)] rounded-[46px] bg-dia-ink p-[10px] shadow-[0_60px_90px_-30px_rgba(2,18,37,0.55),0_0_0_1.5px_rgba(35,134,137,0.5),inset_0_0_0_2px_rgba(255,255,255,0.08)]">
+    <div className="relative mx-auto h-[600px] w-[min(300px,78vw)] rounded-[46px] bg-dia-ink p-[10px] shadow-[0_60px_90px_-30px_rgba(2,18,37,0.55),0_0_0_1.5px_rgba(2,119,189,0.5),inset_0_0_0_2px_rgba(224,247,250,0.08)]">
       <div className="h-full overflow-hidden rounded-[37px]">
         <PhoneScreen />
       </div>
@@ -99,7 +103,7 @@ function FollowCue() {
     <>
       {/* wide screens: label to the left, arrow curving toward the phone */}
       <div className="pointer-events-none absolute right-[calc(50%+190px)] top-24 hidden items-start gap-1 md:flex" aria-hidden="true">
-        <span className="dia-label rounded-full border border-dia-cyan/30 bg-white/80 px-4 py-2 text-sm backdrop-blur">Follow</span>
+        <span className="dia-label dia-glass rounded-full px-4 py-2 text-sm">Follow</span>
         <svg width="130" height="90" viewBox="0 0 130 90" fill="none" className="-mt-1 text-dia-cyan">
           <motion.path d="M4 10 C 50 -4, 100 20, 118 70" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" {...draw} />
           <motion.path d="M104 62 L118 72 L124 54" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...draw} />
@@ -107,7 +111,7 @@ function FollowCue() {
       </div>
       {/* phones: label above the screen, arrow pointing down */}
       <div className="pointer-events-none mb-3 flex flex-col items-center gap-1 md:hidden" aria-hidden="true">
-        <span className="dia-label rounded-full border border-dia-cyan/30 bg-white/80 px-4 py-2 text-sm backdrop-blur">Follow</span>
+        <span className="dia-label dia-glass rounded-full px-4 py-2 text-sm">Follow</span>
         <svg width="26" height="44" viewBox="0 0 26 44" fill="none" className="text-dia-cyan">
           <motion.path d="M13 2 V38" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" {...draw} />
           <motion.path d="M4 29 L13 40 L22 29" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...draw} />
@@ -129,7 +133,7 @@ export default function InstagramPhone() {
           cardClassName="relative mx-auto w-full max-w-[300px]"
           titleComponent={
             <div>
-              <span className="dia-label inline-block rounded-full border border-dia-cyan/25 bg-white/60 px-3 py-1 backdrop-blur">About Us</span>
+              <span className="dia-label dia-glass inline-block rounded-full px-3.5 py-1.5">About Us</span>
               <h2 className="mt-4 font-heading text-4xl font-extrabold text-dia-ink sm:text-5xl">Follow Dia Shoppe</h2>
               <p className="mx-auto mt-3 max-w-xl text-lg text-dia-ink/65">
                 Trusted medical &amp; surgical equipment since 2004. See what is new and say hello on Instagram.

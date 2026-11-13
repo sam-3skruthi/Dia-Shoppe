@@ -111,7 +111,7 @@ export default function AdminLayout({ title, subtitle, actions, children }) {
       {/* content */}
       <div className="lg:pl-64">
         {/* topbar */}
-        <header className="sticky top-0 z-30 bg-[#F2FFF6]/85 backdrop-blur-md border-b border-primary-100">
+        <header className="sticky top-0 z-30 bg-[#E0F7FA]/85 backdrop-blur-md border-b border-primary-100">
           <div className="flex items-center gap-4 px-4 sm:px-6 h-16">
             <button className="lg:hidden text-gray-600" onClick={() => setMobileNav(true)}><FiMenu size={22} /></button>
             <div className="min-w-0 flex-1">

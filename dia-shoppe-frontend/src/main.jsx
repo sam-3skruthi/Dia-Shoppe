@@ -26,7 +26,7 @@ function Fallback() {
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#021225' }}>Something went wrong</h1>
         <p style={{ marginTop: 8, color: '#0B2A44' }}>Please refresh the page. Our team has been notified.</p>
-        <button onClick={() => window.location.assign('/')} style={{ marginTop: 16, background: '#238689', color: '#fff', border: 0, borderRadius: 999, padding: '10px 20px', fontWeight: 600, cursor: 'pointer' }}>
+        <button onClick={() => window.location.assign('/')} style={{ marginTop: 16, background: '#0277BD', color: '#E0F7FA', border: 0, borderRadius: 999, padding: '10px 20px', fontWeight: 600, cursor: 'pointer' }}>
           Back to home
         </button>
       </div>

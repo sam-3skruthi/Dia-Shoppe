@@ -40,7 +40,7 @@ export default function CartSaleStrip() {
   return (
     <div className="mb-5 flex items-stretch overflow-hidden rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm">
       {/* SALE ribbon */}
-      <div className="flex shrink-0 items-center gap-2 bg-[color:var(--sale-accent,#e11d48)] px-4 sm:px-5">
+      <div className="flex shrink-0 items-center gap-2 bg-[color:var(--sale-accent,#0277BD)] px-4 sm:px-5">
         <FiTag size={15} className="text-white" />
         <span className="font-display text-lg font-bold uppercase tracking-[0.18em] text-white">Sale</span>
       </div>

@@ -9,8 +9,8 @@ const STYLE = `
 @keyframes circular-carousel-reveal { from { opacity: 0; } to { opacity: 1; } }
 `;
 const MASKS = {
-  wheel: "linear-gradient(to bottom, transparent, #000000 18%, #000000 82%, transparent)",
-  panorama: "linear-gradient(to right, transparent, #000000 12%, #000000 88%, transparent)"
+  wheel: "linear-gradient(to bottom, transparent, #021225 18%, #021225 82%, transparent)",
+  panorama: "linear-gradient(to right, transparent, #021225 12%, #021225 88%, transparent)"
 };
 const PRESETS = {
   cylinder: {
@@ -130,7 +130,7 @@ const CircularCarousel = ({
   parallax = 0.3,
   stretch = 0.5,
   depthFade = 0.55,
-  fadeColor = "#F2FFF6", // ADAPTED: fades toward Mint Cream, not black
+  fadeColor = "#E0F7FA", // ADAPTED: fades toward Mint Cream, not black
   innerShade = 0.6,
   cornerRadius = 12,
   captions = false,
@@ -768,7 +768,7 @@ const CircularCarousel = ({
   };
   return <div
     ref={rootRef}
-    className={`group/cc relative h-full w-full touch-pan-y select-none overflow-hidden outline-none [-webkit-tap-highlight-color:transparent] focus-visible:shadow-[inset_0_0_0_2px_rgba(35,134,137,0.65)] data-[axis=x]:touch-pan-x data-[draggable]:cursor-grab data-[dragging]:cursor-grabbing ${className}`.trim()}
+    className={`group/cc relative h-full w-full touch-pan-y select-none overflow-hidden outline-none [-webkit-tap-highlight-color:transparent] focus-visible:shadow-[inset_0_0_0_2px_rgba(2,119,189,0.65)] data-[axis=x]:touch-pan-x data-[draggable]:cursor-grab data-[dragging]:cursor-grabbing ${className}`.trim()}
     style={{
       ...style,
       "--cc-fade": fadeColor,
