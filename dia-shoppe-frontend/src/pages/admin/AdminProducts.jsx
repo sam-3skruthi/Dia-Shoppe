@@ -340,29 +340,29 @@ export default function AdminProducts() {
               <label className="block sm:col-span-2">
                 <span className="text-sm font-medium text-gray-600">Product name</span>
                 <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400" />
+                  className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300" />
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-gray-600">Brand</span>
                 <input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400" />
+                  className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300" />
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-gray-600">Category</span>
                 <select required value={form.category_id} onChange={(e) => setForm({ ...form, category_id: Number(e.target.value) })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400 bg-white">
+                  className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300 bg-white">
                   {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-gray-600">Selling price (₹)</span>
                 <input required type="number" min="0" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400" />
+                  className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300" />
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-gray-600">MRP / original price (₹)</span>
                 <input type="number" min="0" step="0.01" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400" placeholder="Same as price" />
+                  className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300" placeholder="Same as price" />
               </label>
               <label className="block sm:col-span-2">
                 <span className="flex items-center gap-1.5 text-sm font-medium text-gray-600">
@@ -372,7 +372,7 @@ export default function AdminProducts() {
                   </span>
                 </span>
                 <input type="number" min="0" step="0.01" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400" placeholder="What the shop pays for this item" />
+                  className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300" placeholder="What the shop pays for this item" />
                 <span className="block text-xs text-gray-400 mt-1">
                   Never shown to customers — used only for profit &amp; margin reports.
                   {marginPct(form.price, form.cost_price) !== null && (
@@ -385,24 +385,24 @@ export default function AdminProducts() {
               <label className="block">
                 <span className="text-sm font-medium text-gray-600">Stock quantity</span>
                 <input required type="number" min="0" value={form.stock_qty} onChange={(e) => setForm({ ...form, stock_qty: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400" />
+                  className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300" />
               </label>
               <label className="block">
                 <span className="text-sm font-medium text-gray-600">Badge (optional)</span>
                 <input value={form.badge} onChange={(e) => setForm({ ...form, badge: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400" placeholder="Best Seller" />
+                  className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300" placeholder="Best Seller" />
               </label>
               {editing === 'new' && (
                 <label className="block">
                   <span className="text-sm font-medium text-gray-600">SKU (optional)</span>
                   <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400 font-mono" placeholder="Auto-generated" />
+                    className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300 font-mono" placeholder="Auto-generated" />
                 </label>
               )}
               <label className="block sm:col-span-2">
                 <span className="text-sm font-medium text-gray-600">Description (optional)</span>
                 <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400" />
+                  className="mt-1 w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300" />
               </label>
 
               {/* per-product specifications — shown as the Specifications table
@@ -431,13 +431,13 @@ export default function AdminProducts() {
                           value={s.k}
                           onChange={(e) => setForm({ ...form, specs: form.specs.map((x, j) => j === i ? { ...x, k: e.target.value } : x) })}
                           placeholder="Label (e.g. Warranty)"
-                          className="w-2/5 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400"
+                          className="w-2/5 border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300"
                         />
                         <input
                           value={s.v}
                           onChange={(e) => setForm({ ...form, specs: form.specs.map((x, j) => j === i ? { ...x, v: e.target.value } : x) })}
                           placeholder="Value (e.g. 2 Years)"
-                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400"
+                          className="flex-1 border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300"
                         />
                         <button
                           type="button"

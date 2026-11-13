@@ -1,0 +1,4 @@
+# SPA fallback — every route serves index.html so React Router can handle it.
+# Without this, refreshing a deep link (e.g. /products/accu-chek) 404s.
+# Read automatically by Netlify and Cloudflare Pages.
+/*    /index.html   200

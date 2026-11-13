@@ -22,7 +22,7 @@ const fmtTime = (iso) =>
 
 const TYPE_META = {
   confirmed: { icon: FiCheckCircle, tint: 'bg-secondary-50 text-secondary-700' },
-  shipped: { icon: FiTruck, tint: 'bg-indigo-50 text-indigo-600' },
+  shipped: { icon: FiTruck, tint: 'bg-secondary-50 text-secondary-600' },
   delivered: { icon: FiHome, tint: 'bg-emerald-50 text-emerald-600' },
   cancelled: { icon: FiXCircle, tint: 'bg-red-50 text-red-500' },
 }
@@ -227,7 +227,7 @@ export default function AdminWhatsApp() {
         </div>
       </div>
 
-      <div className="flex gap-2.5 text-sm text-gray-500 bg-blue-50/60 border border-blue-100 rounded-xl p-4 mt-4">
+      <div className="flex gap-2.5 text-sm text-gray-500 bg-primary-50/60 border border-primary-100 rounded-xl p-4 mt-4">
         <FiInfo className="text-primary-600 shrink-0 mt-0.5" size={16} />
         <p>
           Currently running on Meta's <strong>test number</strong> — messages only reach verified test phones.

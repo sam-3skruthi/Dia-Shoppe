@@ -30,10 +30,12 @@ export default function ProductCard({ product }) {
     >
       <Link to={`/products/${product.slug}`} className="block">
         <div className="relative bg-secondary-50 h-44 flex items-center justify-center overflow-hidden">
-          {product.image ? (
+          {product.image || product.category ? (
+            // real photo, else the category photo (same fallback as the homepage)
             <img
-              src={product.image}
+              src={product.image || `/categories/${product.category}.jpg`}
               alt={product.name}
+              loading="lazy"
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (

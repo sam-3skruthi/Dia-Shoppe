@@ -134,30 +134,30 @@ function SaleModal({ event, products, onClose, onSaved }) {
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Sale name</label>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Diwali Health Sale"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500" />
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300/30 focus:border-primary-500" />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Banner text (optional)</label>
             <input value={bannerText} onChange={(e) => setBannerText(e.target.value)} placeholder="e.g. Up to 30% off glucose monitors"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500" />
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300/30 focus:border-primary-500" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Starts</label>
               <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300/30 focus:border-primary-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Ends</label>
               <input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500" />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300/30 focus:border-primary-500" />
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Products on sale ({selected.size} selected)</label>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search products…"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500" />
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-primary-300/30 focus:border-primary-500" />
             <div className="border border-gray-200 rounded-lg max-h-64 overflow-y-auto divide-y divide-gray-50">
               {filtered.map((p) => {
                 const checked = selected.has(p.id)
@@ -173,7 +173,7 @@ function SaleModal({ event, products, onClose, onSaved }) {
                         type="number" min="0" step="0.01" placeholder="Sale ₹"
                         value={selected.get(p.id)}
                         onChange={(e) => setPrice(p.id, e.target.value)}
-                        className="w-24 border border-gray-200 rounded-lg px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                        className="w-24 border border-gray-200 rounded-lg px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-primary-300/30"
                       />
                     )}
                   </div>

@@ -90,7 +90,7 @@ export default function HeroIntro({ targetRef, onReveal, onDone }) {
         ref={chipRef}
         initial={{ opacity: 1, scale: 1 }}
         animate={lockup}
-        className="flex items-center gap-3 sm:gap-4 drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)]"
+        className="flex items-center gap-3 sm:gap-4 drop-shadow-[0_4px_18px_rgba(2,18,37,0.35)]"
       >
         <motion.img
           src="/logos/ds-emblem.png"

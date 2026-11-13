@@ -10,14 +10,14 @@ import { FaInstagram, FaFacebookF, FaGoogle, FaWhatsapp, FaYoutube } from 'react
 
 // channel icon + colour for the "where leads come from" display
 const SOURCE_META = {
-  Instagram: { icon: FaInstagram, color: '#E1306C' },
-  Facebook: { icon: FaFacebookF, color: '#1877F2' },
-  Google: { icon: FaGoogle, color: '#4285F4' },
-  WhatsApp: { icon: FaWhatsapp, color: '#25D366' },
-  YouTube: { icon: FaYoutube, color: '#FF0000' },
-  Direct: { icon: FiCompass, color: '#64748b' },
+  Instagram: { icon: FaInstagram, color: '#0277BD' },
+  Facebook: { icon: FaFacebookF, color: '#0277BD' },
+  Google: { icon: FaGoogle, color: '#0288D1' },
+  WhatsApp: { icon: FaWhatsapp, color: '#00B4D8' },
+  YouTube: { icon: FaYoutube, color: '#0277BD' },
+  Direct: { icon: FiCompass, color: '#4E7F98' },
 }
-const sourceMeta = (s) => SOURCE_META[s] || { icon: FiCompass, color: '#64748b' }
+const sourceMeta = (s) => SOURCE_META[s] || { icon: FiCompass, color: '#4E7F98' }
 
 /*
   Leads = customers with an open cart who haven't checked out. Abandoned carts
@@ -164,7 +164,7 @@ export default function AdminLeads() {
         <div className="relative ml-auto">
           <FiSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, phone…"
-            className="bg-white border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary-500/30" />
+            className="bg-white border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary-300/30" />
         </div>
       </div>
 

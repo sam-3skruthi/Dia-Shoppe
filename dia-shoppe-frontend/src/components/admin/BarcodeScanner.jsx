@@ -92,7 +92,7 @@ export default function BarcodeScanner({ onDetected, onClose }) {
             <video ref={videoRef} playsInline muted className="w-full h-64 object-cover" />
             {/* aiming guide */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-4/5 h-20 border-2 border-secondary-400 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+              <div className="w-4/5 h-20 border-2 border-secondary-400 rounded-lg shadow-[0_0_0_9999px_rgba(2,18,37,0.35)]" />
             </div>
           </div>
         )}

@@ -67,7 +67,7 @@ function SaleLiveCard({ event }) {
       <span className="min-w-0">
         <span className="block text-[10px] font-bold uppercase tracking-wider text-secondary-300">Live Sale</span>
         <span className="block font-semibold text-white text-sm leading-snug truncate">{event.name}</span>
-        <span className="flex items-center gap-1 text-xs text-blue-100/70 mt-0.5">
+        <span className="flex items-center gap-1 text-xs text-dia-mint/70 mt-0.5">
           <FiClock size={11} /> {timeLeft(event.ends_at)} <FiArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
         </span>
       </span>
@@ -84,7 +84,7 @@ function SaleSoonCard() {
       <span>
         <span className="block text-[10px] font-bold uppercase tracking-wider text-secondary-300">Coming Soon</span>
         <span className="block font-semibold text-white text-sm">New sale event on the way</span>
-        <span className="block text-xs text-blue-100/60 mt-0.5">Seasonal offers — stay tuned</span>
+        <span className="block text-xs text-dia-mint/60 mt-0.5">Seasonal offers — stay tuned</span>
       </span>
     </div>
   )
@@ -109,7 +109,7 @@ export default function DealsMarquee() {
     <section className="relative py-10" aria-label="Today's deals">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
         <h2 className="font-display text-xl font-semibold text-white">Today's Picks</h2>
-        <p className="text-sm text-blue-100/60">Deals refresh daily — grab them while they last</p>
+        <p className="text-sm text-dia-mint/60">Deals refresh daily — grab them while they last</p>
       </div>
       <div className="overflow-hidden">
         <div className="flex w-max items-stretch gap-4 px-4 animate-marquee hover:[animation-play-state:paused]">

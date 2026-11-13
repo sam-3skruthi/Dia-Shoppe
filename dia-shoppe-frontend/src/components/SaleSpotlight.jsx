@@ -38,7 +38,7 @@ function CountdownBox({ value, label }) {
   return (
     <div className="bg-white/10 border border-white/15 rounded-lg px-2 py-1.5 text-center min-w-[44px]">
       <div className="font-bold text-white text-lg leading-none tabular-nums">{pad(value)}</div>
-      <div className="text-[10px] text-blue-100/60 uppercase tracking-wide mt-0.5">{label}</div>
+      <div className="text-[10px] text-dia-mint/60 uppercase tracking-wide mt-0.5">{label}</div>
     </div>
   )
 }
@@ -57,7 +57,7 @@ function SalePage({ event, products, onShopSale }) {
         <h3 className="font-display text-2xl text-white mt-3 leading-tight">{event.name}</h3>
         {maxOff > 0 && <p className="text-secondary-300 font-semibold mt-1">Up to {maxOff}% off</p>}
         <div className="flex items-center gap-2 mt-4">
-          <FiClock size={14} className="text-blue-100/60 shrink-0" />
+          <FiClock size={14} className="text-dia-mint/60 shrink-0" />
           {t.days > 0 && <CountdownBox value={t.days} label="days" />}
           <CountdownBox value={t.hours} label="hrs" />
           <CountdownBox value={t.mins} label="min" />
@@ -86,7 +86,7 @@ function DealPage({ deal, index, total }) {
           <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-secondary-200 bg-white/10 border border-white/15 rounded-full px-2.5 py-1">
             <FiTag size={12} /> Deal of the Day
           </span>
-          <span className="text-[11px] text-blue-100/50 tabular-nums">{index + 1} / {total}</span>
+          <span className="text-[11px] text-dia-mint/50 tabular-nums">{index + 1} / {total}</span>
         </div>
         <Link to={`/products/${deal.slug}`} className="group flex items-center gap-4 mt-3">
           <span className="w-16 h-16 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0">
@@ -100,7 +100,7 @@ function DealPage({ deal, index, total }) {
             </span>
             <span className="flex items-baseline gap-2 mt-1 flex-wrap">
               <span className="text-lg font-bold text-secondary-300">₹{deal.price.toLocaleString('en-IN')}</span>
-              <span className="text-xs text-blue-100/50 line-through">₹{deal.originalPrice.toLocaleString('en-IN')}</span>
+              <span className="text-xs text-dia-mint/50 line-through">₹{deal.originalPrice.toLocaleString('en-IN')}</span>
               {off > 0 && <span className="text-[11px] font-bold text-ink-950 bg-secondary-400 rounded-full px-1.5 py-0.5">{off}% OFF</span>}
             </span>
           </span>
@@ -125,7 +125,7 @@ function ComingSoonPage() {
           <FiZap size={22} />
         </span>
         <h3 className="font-display text-xl text-white mt-3">Sale coming soon</h3>
-        <p className="text-sm text-blue-100/60 mt-1">Seasonal offers on trusted equipment are on the way. Check back shortly.</p>
+        <p className="text-sm text-dia-mint/60 mt-1">Seasonal offers on trusted equipment are on the way. Check back shortly.</p>
       </div>
     </div>
   )

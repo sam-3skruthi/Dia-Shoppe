@@ -1,12 +1,20 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from './motion'
+import { LiquidButton } from './ui/buttons'
+import Magnet from './bits/Magnet'
 import { FiAward, FiChevronDown } from 'react-icons/fi'
+import HeroReel from './HeroReel'
+import { heroClips } from '../data/heroVideos'
+
+// the clip reel from src/data/heroVideos.js, or the original single video until clips are added
+const CLIPS = heroClips.length ? heroClips : [{ src: '/hero-vid.mp4', poster: '/hero-bp.webp' }]
 
 /*
   Full-bleed cinematic hero with a curved ("inverted semicircle") bottom edge.
   Background priority:
-    1. /public/hero-vid.mp4  — looping background video → <video>
+    1. video reel — the clips in src/data/heroVideos.js, played one after
+       another (falls back to /public/hero-vid.mp4 on a loop while it is empty)
     2. /public/hero-bp.webp  — still photo poster / Ken Burns fallback
     3. deep-blue → teal gradient (always underneath)
 */
@@ -20,14 +28,7 @@ export default function CinematicHero({ start = true }) {
       <div className="absolute inset-0 bg-gradient-to-br from-ink-950 via-primary-950 to-secondary-900" aria-hidden="true" />
 
       {videoOk && (
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay muted loop playsInline
-          poster="/hero-bp.webp"
-          onError={() => setVideoOk(false)}
-        >
-          <source src="/hero-vid.mp4" type="video/mp4" />
-        </video>
+        <HeroReel clips={CLIPS} className="absolute inset-0 w-full h-full object-cover" onFail={() => setVideoOk(false)} />
       )}
 
       {!videoOk && imgOk && (
@@ -46,7 +47,7 @@ export default function CinematicHero({ start = true }) {
       <div className="absolute inset-0 bg-gradient-to-t from-ink-950/65 via-transparent to-ink-950/30" aria-hidden="true" />
       <div className="absolute inset-0 bg-secondary-300/10 mix-blend-soft-light" aria-hidden="true" />
       {/* light navy gradient pooled in the corners (vignette) */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(4,13,24,0.6)_100%)]" aria-hidden="true" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(2,18,37,0.6)_100%)]" aria-hidden="true" />
 
       {/* ── Foreground content (centered, editorial) ── */}
       <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-36 pb-28">
@@ -62,30 +63,26 @@ export default function CinematicHero({ start = true }) {
 
           <h1 className="font-display font-semibold leading-[1.05] tracking-tight text-4xl sm:text-5xl lg:text-[4.25rem] mb-6">
             Healthcare equipment,<br />
-            <span className="italic text-secondary-300">designed around you</span>
+            <span className="text-secondary-300">designed around you</span>
           </h1>
 
-          <p className="text-blue-100/90 text-base sm:text-lg mb-9 max-w-xl mx-auto leading-relaxed">
+          <p className="text-dia-mint/90 text-base sm:text-lg mb-9 max-w-xl mx-auto leading-relaxed">
             Authentic glucose &amp; BP monitors, respiratory and hospital
             equipment from the brands you trust — delivered across India,
             fast and reliably.
           </p>
 
           <div className="flex flex-wrap justify-center gap-3">
-            <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
-              <Link
-                to="/products"
-                className="inline-block bg-secondary-500 hover:bg-secondary-400 text-ink-950 font-semibold px-8 py-3.5 rounded-full transition-colors shadow-lg shadow-secondary-900/30"
-              >
+            <Magnet padding={80} magnetStrength={3} maxOffset={16}>
+              <LiquidButton as={Link} to="/products" tone="dark" variant="accent" size="xl">
                 Shop Now
-              </Link>
-            </motion.div>
-            <a
-              href="#categories"
-              className="inline-block bg-white/10 hover:bg-white/20 border border-white/30 backdrop-blur-md text-white font-semibold px-8 py-3.5 rounded-full transition-colors"
-            >
-              Browse Categories
-            </a>
+              </LiquidButton>
+            </Magnet>
+            <Magnet padding={80} magnetStrength={3} maxOffset={16}>
+              <LiquidButton as="a" href="#categories" tone="dark" size="xl">
+                Browse Categories
+              </LiquidButton>
+            </Magnet>
           </div>
         </motion.div>
       </div>

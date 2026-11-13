@@ -43,7 +43,7 @@ export function StackedBars({ data, series, height = 200, valueFmt = (v) => v })
                           {s.name}: <span className="font-semibold">{valueFmt(d[s.key] || 0)}</span>
                         </div>
                       ))}
-                      <div className="border-t border-white/15 mt-1 pt-1 text-blue-100/80">Total: {valueFmt(total)}</div>
+                      <div className="border-t border-white/15 mt-1 pt-1 text-dia-mint/80">Total: {valueFmt(total)}</div>
                     </div>
                   )}
                   {/* bar */}
@@ -85,7 +85,7 @@ export function StackedBars({ data, series, height = 200, valueFmt = (v) => v })
 }
 
 /* ── Smooth gradient area chart (funnel / trend) ── */
-export function AreaChart({ values, height = 170, stroke = '#3b82f6', gradientId = 'areaGrad', labels }) {
+export function AreaChart({ values, height = 170, stroke = '#0277BD', gradientId = 'areaGrad', labels }) {
   const W = 100
   const max = Math.max(1, ...values)
   const n = values.length
@@ -114,12 +114,12 @@ export function AreaChart({ values, height = 170, stroke = '#3b82f6', gradientId
         </defs>
         {/* stage dividers */}
         {labels && pts.map((p, i) => (
-          <line key={i} x1={p.x} y1="0" x2={p.x} y2={height} stroke="#eef2f7" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <line key={i} x1={p.x} y1="0" x2={p.x} y2={height} stroke="#E0F7FA" strokeWidth="1" vectorEffect="non-scaling-stroke" />
         ))}
         <path d={area} fill={`url(#${gradientId})`} />
         <path d={line} fill="none" stroke={stroke} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
         {pts.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="1.6" fill="#fff" stroke={stroke} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+          <circle key={i} cx={p.x} cy={p.y} r="1.6" fill="#E0F7FA" stroke={stroke} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
         ))}
       </svg>
     </div>
@@ -164,7 +164,7 @@ export function GroupedBars({ data, series, height = 180, valueFmt = (v) => v })
 }
 
 // Horizontal progress bar row (for demand / geography lists)
-export function BarRow({ label, sub, value, max, color = '#10b981', valueLabel }) {
+export function BarRow({ label, sub, value, max, color = '#00B4D8', valueLabel }) {
   return (
     <div>
       <div className="flex justify-between items-baseline mb-1">
@@ -187,7 +187,7 @@ export function BarRow({ label, sub, value, max, color = '#10b981', valueLabel }
 }
 
 // Simple line/area sparkline via SVG polyline
-export function Sparkline({ data, color = '#10b981', height = 60 }) {
+export function Sparkline({ data, color = '#00B4D8', height = 60 }) {
   const max = Math.max(...data)
   const min = Math.min(...data)
   const pts = data

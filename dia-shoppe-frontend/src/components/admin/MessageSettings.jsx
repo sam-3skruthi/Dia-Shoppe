@@ -14,7 +14,7 @@ import {
 
 const ORDER_FIELDS = [
   { key: 'status_confirmed', label: 'When order is confirmed', icon: FiCheckCircle, tint: 'text-secondary-600' },
-  { key: 'status_shipped', label: 'When order is shipped', icon: FiTruck, tint: 'text-indigo-600', note: 'Used only when no courier/tracking is added — otherwise the courier + tracking number is sent.' },
+  { key: 'status_shipped', label: 'When order is shipped', icon: FiTruck, tint: 'text-secondary-600', note: 'Used only when no courier/tracking is added — otherwise the courier + tracking number is sent.' },
   { key: 'status_delivered', label: 'When order is delivered', icon: FiHome, tint: 'text-emerald-600' },
   { key: 'status_cancelled', label: 'When order is cancelled', icon: FiXCircle, tint: 'text-red-500' },
 ]
@@ -29,7 +29,7 @@ function Field({ label, icon: Icon, tint, note, value, onChange, rows = 2 }) {
         rows={rows}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-secondary-400 resize-none"
+        className="w-full border border-primary-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300 resize-none"
       />
       {note && <span className="block text-xs text-gray-400 mt-1">{note}</span>}
     </label>
@@ -70,7 +70,7 @@ export default function MessageSettings() {
     <>
       {error && <div className="bg-red-50 text-red-600 rounded-xl p-4 text-sm mb-4" role="alert">{error}</div>}
 
-      <div className="flex gap-2.5 text-sm text-gray-600 bg-blue-50/60 border border-blue-100 rounded-xl p-4 mb-5">
+      <div className="flex gap-2.5 text-sm text-gray-600 bg-primary-50/60 border border-primary-100 rounded-xl p-4 mb-5">
         <FiInfo className="text-primary-600 shrink-0 mt-0.5" size={16} />
         <p>
           These are the wording changes you can make instantly — no Meta approval needed. The fixed part of each

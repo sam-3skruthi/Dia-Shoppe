@@ -180,7 +180,7 @@ function ReviewSection({ order }) {
         rows={3}
         maxLength={500}
         placeholder="Tell us about the product and delivery (optional)…"
-        className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 resize-none"
+        className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300/30 focus:border-primary-500 resize-none"
       />
 
       {error && <p className="text-sm text-red-500 mt-2" role="alert">{error}</p>}
@@ -230,9 +230,9 @@ export default function OrderConfirmation() {
         <PageBackdrop />
         <Header />
         <div className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16 space-y-6">
-          <div className="w-20 h-20 mx-auto rounded-full bg-white/10 animate-pulse" />
-          <div className="h-8 w-2/3 mx-auto rounded-xl bg-white/10 animate-pulse" />
-          <div className="h-40 rounded-2xl bg-white/10 animate-pulse" />
+          <div className="w-20 h-20 mx-auto rounded-full bg-primary-100/70 animate-pulse" />
+          <div className="h-8 w-2/3 mx-auto rounded-xl bg-primary-100/70 animate-pulse" />
+          <div className="h-40 rounded-2xl bg-primary-100/70 animate-pulse" />
         </div>
         <Footer />
       </div>
@@ -245,8 +245,8 @@ export default function OrderConfirmation() {
         <PageBackdrop />
         <Header />
         <div className="flex-1 flex flex-col items-center justify-center text-center px-4 py-32">
-          <h1 className="font-display text-3xl font-semibold text-white mb-3">Order not found</h1>
-          <p className="text-blue-100/80 mb-6">We couldn’t find that order. Make sure you’re signed in with the account that placed it.</p>
+          <h1 className="font-display text-3xl font-semibold text-dia-ink mb-3">Order not found</h1>
+          <p className="text-dia-ink/65 mb-6">We couldn’t find that order. Make sure you’re signed in with the account that placed it.</p>
           <Link to="/products" className="inline-flex items-center gap-2 bg-primary-700 text-white px-6 py-3 rounded-full font-semibold hover:bg-primary-800 transition-colors">
             <FiShoppingBag size={18} /> Continue shopping
           </Link>
@@ -276,8 +276,8 @@ export default function OrderConfirmation() {
           >
             <FiCheckCircle size={44} className="text-secondary-500" />
           </motion.div>
-          <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white">Order Confirmed!</h1>
-          <p className="text-blue-100/80 mt-2">Thank you, {c.name?.split(' ')[0] || 'there'}. We’ve received your order and will start preparing it right away.</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-semibold text-dia-ink">Order Confirmed!</h1>
+          <p className="text-dia-ink/65 mt-2">Thank you, {c.name?.split(' ')[0] || 'there'}. We’ve received your order and will start preparing it right away.</p>
           <div className="inline-flex items-center gap-2 mt-4 bg-white border border-gray-100 shadow-sm rounded-full px-4 py-2 text-sm">
             <span className="text-gray-500">Order ID</span>
             <span className="font-bold text-primary-700">{order.id}</span>
@@ -298,7 +298,7 @@ export default function OrderConfirmation() {
             <FiTruck size={24} className="text-secondary-300" />
           </div>
           <div>
-            <div className="text-sm text-blue-100/70">Estimated delivery</div>
+            <div className="text-sm text-dia-mint/70">Estimated delivery</div>
             <div className="font-semibold text-lg">{fmtDate(order.date, 3)} – {fmtDate(order.date, 5)}</div>
           </div>
         </Reveal>

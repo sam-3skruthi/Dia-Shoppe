@@ -17,7 +17,7 @@ function RibbonRun() {
           <span className="font-display text-lg sm:text-xl font-bold uppercase tracking-[0.25em] text-primary-900">
             Sale
           </span>
-          <FiStar size={13} className="text-[color:var(--sale-accent,#e11d48)]" />
+          <FiStar size={13} className="text-[color:var(--sale-accent,#0277BD)]" />
         </span>
       ))}
     </div>
@@ -36,7 +36,7 @@ function Ribbon({ rotate, reverse }) {
       className="absolute left-1/2 top-1/2 w-[150%]"
       style={{ transform: `translate(-50%, -50%) rotate(${rotate}deg)` }}
     >
-      <div className="overflow-hidden border-y-2 border-[color:var(--sale-accent,#e11d48)] bg-white py-2 shadow-xl">
+      <div className="overflow-hidden border-y-2 border-[color:var(--sale-accent,#0277BD)] bg-white py-2 shadow-xl">
         <div className={reverse ? '[animation-direction:reverse]' : ''}>
           <RibbonRun />
         </div>

@@ -11,8 +11,8 @@ import { FaInstagram, FaFacebookF } from 'react-icons/fa'
 */
 
 const PLATFORMS = {
-  instagram: { label: 'Instagram', icon: FaInstagram, color: '#E1306C', bg: 'from-[#F58529] via-[#DD2A7B] to-[#8134AF]' },
-  facebook: { label: 'Facebook', icon: FaFacebookF, color: '#1877F2', bg: 'from-[#1877F2] to-[#0A4DA6]' },
+  instagram: { label: 'Instagram', icon: FaInstagram, color: '#0277BD', bg: 'from-[#90E0EF] via-[#00B4D8] to-[#02629C]' },
+  facebook: { label: 'Facebook', icon: FaFacebookF, color: '#0277BD', bg: 'from-[#0277BD] to-[#0277BD]' },
 }
 
 function ConnectCard({ platform, account }) {
@@ -74,7 +74,7 @@ function InboxItem({ msg, onReply }) {
       ) : (
         <div className="ml-8 mt-2 flex gap-2">
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a reply…"
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-secondary-400" />
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary-300" />
           <button onClick={send} disabled={sending || !text.trim()}
             className="inline-flex items-center gap-1 bg-secondary-500 text-white text-sm font-semibold px-3 py-1.5 rounded-lg hover:bg-secondary-600 disabled:opacity-50">
             <FiSend size={13} /> {sending ? '…' : 'Reply'}

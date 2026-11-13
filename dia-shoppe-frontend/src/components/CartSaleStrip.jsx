@@ -40,7 +40,7 @@ export default function CartSaleStrip() {
   return (
     <div className="mb-5 flex items-stretch overflow-hidden rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm">
       {/* SALE ribbon */}
-      <div className="flex shrink-0 items-center gap-2 bg-[color:var(--sale-accent,#e11d48)] px-4 sm:px-5">
+      <div className="flex shrink-0 items-center gap-2 bg-[color:var(--sale-accent,#0277BD)] px-4 sm:px-5">
         <FiTag size={15} className="text-white" />
         <span className="font-display text-lg font-bold uppercase tracking-[0.18em] text-white">Sale</span>
       </div>
@@ -67,7 +67,7 @@ export default function CartSaleStrip() {
                 </span>
                 <span className="flex items-baseline gap-2">
                   <span className="font-bold text-secondary-300">₹{p.price.toLocaleString('en-IN')}</span>
-                  <span className="text-xs text-blue-100/50 line-through">₹{p.originalPrice.toLocaleString('en-IN')}</span>
+                  <span className="text-xs text-dia-mint/50 line-through">₹{p.originalPrice.toLocaleString('en-IN')}</span>
                   {off > 0 && (
                     <span className="rounded-full bg-secondary-400 px-1.5 py-0.5 text-[10px] font-bold text-ink-950">{off}% OFF</span>
                   )}
