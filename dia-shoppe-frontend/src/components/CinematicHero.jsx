@@ -23,12 +23,12 @@ export default function CinematicHero({ start = true }) {
   const [imgOk, setImgOk] = useState(true)
 
   return (
-    <section className="relative overflow-hidden min-h-[92vh] flex items-center justify-center text-white text-center rounded-b-[50%]">
+    <section className="relative overflow-hidden min-h-[92vh] flex items-center justify-center text-white text-center rounded-b-[50%] transform-gpu isolate [backface-visibility:hidden]">
       {/* ── Background layers ── */}
       <div className="absolute inset-0 bg-gradient-to-br from-ink-950 via-primary-950 to-secondary-900" aria-hidden="true" />
 
       {videoOk && (
-        <HeroReel clips={CLIPS} className="absolute inset-0 w-full h-full object-cover" onFail={() => setVideoOk(false)} />
+        <HeroReel clips={CLIPS} className="absolute inset-0 w-full h-full object-cover transform-gpu [backface-visibility:hidden] scale-[1.015]" onFail={() => setVideoOk(false)} />
       )}
 
       {!videoOk && imgOk && (

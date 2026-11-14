@@ -146,6 +146,24 @@ export async function fetchOrder(id) {
 // (cancelled allowed from pending/paid)
 export const ORDER_STATUSES = ['pending', 'paid', 'confirmed', 'shipped', 'delivered', 'cancelled']
 
+// Backend-controlled states a customer/admin API role can never *set* directly — they are
+// produced by server workflows (settle_payment → on_hold when stock is short; a courier RTO event).
+// They still need to render in the admin list, but the status dropdown must not offer them.
+export const BACKEND_ONLY_STATUSES = ['on_hold', 'rto']
+
+// Direct order-status changes the DB guard (migration 042) actually permits for API roles.
+// Keeping the dropdown in step with the guard means the admin is never offered a move the
+// database will reject (which would otherwise surface as a raw ORDER_STATUS_BLOCKED error):
+//   • on_hold / rto / cancelled  → terminal here; resolved only through the backend procedures
+//   • pending                    → cancelled only (payment settlement is what confirms it)
+//   • everything else            → forward fulfilment moves + cancel, but never back to pending
+//                                  and never to a backend-only state (on_hold / rto)
+export function allowedStatusTransitions(from) {
+  if (['on_hold', 'rto', 'cancelled', 'delivered'].includes(from)) return []
+  if (from === 'pending') return ['cancelled']
+  return ORDER_STATUSES.filter((s) => s !== 'pending' && s !== from)
+}
+
 export async function updateOrderStatus(id, status, shipping = {}) {
   const patch = { status }
   if (shipping.courier !== undefined) patch.courier = shipping.courier || null

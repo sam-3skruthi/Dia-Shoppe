@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
-import { fetchMyOrders, updateOrderStatus, onOrdersChange, ORDER_STATUSES } from '../../lib/orders'
+import { fetchMyOrders, updateOrderStatus, onOrdersChange, ORDER_STATUSES, allowedStatusTransitions } from '../../lib/orders'
 import { exportCsv } from '../../lib/exportCsv'
 import BarcodeScanner from '../../components/admin/BarcodeScanner'
 import { FiChevronDown, FiPackage, FiTruck, FiX, FiDownload, FiCamera, FiAlertTriangle, FiRotateCcw } from 'react-icons/fi'
@@ -17,6 +17,7 @@ const REFUND_BADGE = {
 const inr = (n) => '₹' + Number(n).toLocaleString('en-IN')
 const fmtDate = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1)
+const statusLabel = (s) => s.split('_').map(cap).join(' ') // 'on_hold' → 'On Hold'
 
 const statusColor = (s) =>
   s === 'delivered' ? 'bg-emerald-50 text-emerald-600'
@@ -24,6 +25,9 @@ const statusColor = (s) =>
     : s === 'confirmed' ? 'bg-amber-50 text-amber-600'
     : s === 'paid' ? 'bg-secondary-50 text-secondary-700'
     : s === 'cancelled' ? 'bg-red-50 text-red-500'
+    // backend-controlled states (settle_payment / courier RTO) — surfaced read-only
+    : s === 'on_hold' ? 'bg-orange-100 text-orange-700'
+    : s === 'rto' ? 'bg-rose-100 text-rose-700'
     : 'bg-gray-100 text-gray-500' // pending
 
 export default function AdminOrders() {
@@ -187,16 +191,31 @@ export default function AdminOrders() {
                     </td>
                     <td className="py-3 px-4 text-right font-semibold text-ink-900">{inr(o.totals.total)}</td>
                     <td className="py-3 px-4">
-                      <div className="relative inline-block">
-                        <select
-                          value={o.statusRaw}
-                          onChange={(e) => changeStatus(o.id, e.target.value)}
-                          className={`appearance-none pr-7 pl-3 py-1 rounded-full text-[11px] font-semibold cursor-pointer outline-none ${statusColor(o.statusRaw)}`}
-                        >
-                          {ORDER_STATUSES.map((s) => <option key={s} value={s}>{cap(s)}</option>)}
-                        </select>
-                        <FiChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-current opacity-70" />
-                      </div>
+                      {(() => {
+                        // Only offer moves the DB guard (migration 042) will accept; always keep the
+                        // current status selectable. Terminal / backend-controlled states (delivered,
+                        // cancelled, on_hold, rto) have no valid direct change, so show a read-only pill.
+                        const options = [o.statusRaw, ...allowedStatusTransitions(o.statusRaw).filter((s) => s !== o.statusRaw)]
+                        if (options.length <= 1) {
+                          return (
+                            <span className={`inline-block px-3 py-1 rounded-full text-[11px] font-semibold ${statusColor(o.statusRaw)}`}>
+                              {statusLabel(o.statusRaw)}
+                            </span>
+                          )
+                        }
+                        return (
+                          <div className="relative inline-block">
+                            <select
+                              value={o.statusRaw}
+                              onChange={(e) => changeStatus(o.id, e.target.value)}
+                              className={`appearance-none pr-7 pl-3 py-1 rounded-full text-[11px] font-semibold cursor-pointer outline-none ${statusColor(o.statusRaw)}`}
+                            >
+                              {options.map((s) => <option key={s} value={s}>{statusLabel(s)}</option>)}
+                            </select>
+                            <FiChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-current opacity-70" />
+                          </div>
+                        )
+                      })()}
                       {(o.courier || o.trackingNumber) && (
                         <div className="flex items-center gap-1 text-[11px] text-gray-400 mt-1">
                           <FiTruck size={11} /> {o.courier}{o.trackingNumber ? ` · ${o.trackingNumber}` : ''}
